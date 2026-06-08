@@ -58,3 +58,9 @@ desktop.ini
 
 # ── Screenshots ──
 演示截图/
+
+# ── External cache ──
+.skills/
+
+# ── Intermediate icon builds ──
+public/icon-*.png
