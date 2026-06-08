@@ -1,0 +1,12 @@
+{
+  "name": "terminal-server",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.21.0"
+  }
+}

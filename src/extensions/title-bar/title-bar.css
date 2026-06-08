@@ -1,0 +1,53 @@
+/* ── 标题栏：全宽，始终在最顶部 ── */
+.title-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  -webkit-app-region: drag;
+  background: rgb(var(--top-bar-tint-rgb));
+}
+
+.title-bar__spacer {
+  flex: 1;
+}
+
+.title-bar__controls {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  -webkit-app-region: no-drag;
+}
+
+.tb-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.73);
+  cursor: pointer;
+  transition: background 0.15s;
+  outline: none;
+}
+
+.tb-btn:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.tb-btn--close:hover {
+  background: #e81123;
+  color: #fff;
+}
+
+/* 主内容区域下移 32px，不被标题栏遮挡 */
+#root > div:not(.title-bar):not(.top-menu-bar):not(.top-menu-toggle) {
+  margin-top: 32px;
+  height: calc(100vh - 32px) !important;
+}

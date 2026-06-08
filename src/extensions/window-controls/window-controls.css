@@ -1,0 +1,30 @@
+.window-controls {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  margin-left: auto;
+  -webkit-app-region: no-drag;
+}
+
+.wc-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.wc-btn:hover {
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+}
+
+.wc-close:hover {
+  background: #e81123;
+  color: #fff;
+}

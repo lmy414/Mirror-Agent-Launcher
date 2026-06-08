@@ -1,0 +1,75 @@
+/* ====== Mini Nav — 52px 竖排导航栏 ====== */
+/* 精确匹配 pencil-restore/pencil-main-ui.html 设计 */
+
+.mini-nav {
+  width: 52px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 0;
+  gap: 0;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 52px;
+  height: 54px;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.nav-item:hover { color: var(--text-secondary); }
+
+.nav-item.active {
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.08);
+}
+
+/* 第一个选项（通信）始终使用首栏颜色，保证视觉连贯 */
+.nav-item.is-first {
+  background: rgb(var(--top-bar-tint-rgb));
+  color: var(--text-primary);
+}
+.nav-item.is-first:hover {
+  color: var(--text-primary);
+}
+
+.nav-icon {
+  font-size: 16px;
+  line-height: 1;
+  font-family: "Inter", sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-icon svg {
+  display: block;
+  stroke: currentColor;
+}
+
+.nav-label {
+  font-size: 9px;
+  font-weight: 600;
+  font-family: "Noto Serif SC", serif;
+  letter-spacing: 0.5px;
+}
+
+.nav-divider {
+  width: 100%;
+  height: 0.5px;
+  background: rgba(255,255,255,0.06);
+  opacity: 0.6;
+  margin-top: 4px;
+}

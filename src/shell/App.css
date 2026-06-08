@@ -1,0 +1,392 @@
+/* ====== CSS Variables (Pencil Design System) ====== */
+:root {
+  --accent: #6B8FA8;
+  --accent-rgb: 107,143,168;
+  --accent-secondary: #5B8C5A;
+  --accent-secondary-rgb: 91,140,90;
+  --text-primary: #EAEAEE;
+  --text-secondary: #A0A0A8;
+  --text-muted: #6E6E78;
+  --border: rgba(255,255,255,0.06);
+  --border-light: rgba(255,255,255,0.10);
+  --success: #5B8C5A;
+  --success-rgb: 91,140,90;
+  --error: #E8553D;
+  --error-rgb: 232,85,61;
+  --warning: #C8963E;
+  --warning-rgb: 200,150,62;
+  --code-bg: rgba(0,0,0,0.50);
+  --card-bg: rgba(14,14,22,0.25);
+
+  /* Glass panel — Pencil gradient */
+  --panel-bg-top: rgba(var(--glass-tint-rgb),0.90);
+  --panel-bg-mid: rgba(var(--glass-tint-rgb),0.70);
+  --panel-bg-low: rgba(var(--glass-tint-rgb),0.40);
+  --panel-bg-bottom: rgba(var(--glass-tint-rgb),0.10);
+  --glass-bg: linear-gradient(180deg, var(--panel-bg-top), var(--panel-bg-mid), var(--panel-bg-low), var(--panel-bg-bottom));
+  --glass-border: rgba(255,255,255,0.06);
+  --glass-blur: blur(20px) saturate(120%);
+  --glass-tint-rgb: 0,0,0;
+  --top-bar-tint-rgb: 0,0,0;
+
+  /* Layout */
+  --gap: 6px;
+  --margin: 12px;
+
+  /* 气泡系统 — 保持部分原有值，accent 用新色 */
+  --bubble-user-bg: linear-gradient(135deg, rgba(var(--accent-rgb),0.22), rgba(91,140,90,0.15));
+  --bubble-user-border: rgba(var(--accent-rgb),0.16);
+  --bubble-ai-bg: rgba(255,255,255,0.04);
+  --bubble-ai-border: rgba(255,255,255,0.06);
+  --bubble-radius: 18px;
+  --bubble-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  --bubble-glow: inset 0 1px 0 rgba(255,255,255,0.04);
+
+  /* 动画 */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+
+  /* Avatar */
+  --avatar-size: 24px;
+  --avatar-glow-color: rgba(var(--accent-rgb),0.2);
+
+  /* 间距 */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+}
+
+/* ====== Reset ====== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body, #root {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: "Inter", "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif;
+  background: transparent;
+  color: var(--text-primary);
+  user-select: none;
+  -webkit-app-region: drag;
+}
+
+button, input, select, textarea, a, [role="button"],
+.mini-nav, .nav-item, .glass-panel, .glass-panel-full,
+.top-menu-toggle, .top-menu-item, .top-menu-bar {
+  -webkit-app-region: no-drag;
+}
+
+/* 确保 #root 内所有可交互区域不被 drag 拦截 */
+#root * {
+  -webkit-app-region: no-drag;
+}
+
+/* title-bar 需要覆写 #root * 的 no-drag */
+#root .title-bar {
+  -webkit-app-region: drag;
+}
+
+#root .title-bar__controls,
+#root .title-bar__controls * {
+  -webkit-app-region: no-drag;
+}
+
+/* body 保留 drag */
+body {
+  -webkit-app-region: drag;
+}
+
+/* ====== 底图（硬编码，后续通过设置面板切换） ====== */
+body {
+  background-image: url('/wallpapers/default-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* ====== Pencil 背景纹理 ====== */
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse at 60% 80%, rgba(var(--accent-rgb),0.06) 0%, transparent 50%),
+    linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.40) 100%);
+  pointer-events: none;
+}
+
+/* ====== 统一滚动条 ====== */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+::-webkit-scrollbar-corner { background: transparent; }
+* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent; }
+
+/* ====== 玻璃拟态面板（全局共享类） — Pencil 渐变 ====== */
+.glass-panel {
+  position: relative;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-right: 1px solid rgba(255,255,255,0.10);
+  opacity: 0.92;
+  overflow: hidden;
+}
+
+/* 全屏玻璃面板（无右侧边框，用于独立 View） */
+.glass-panel-full {
+  position: relative;
+  z-index: 1;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid rgba(255,255,255,0.10);
+  opacity: 0.92;
+  overflow: hidden;
+  width: 100%;
+  height: 100vh;
+}
+
+/* ====== 通用分割线 ====== */
+.divider {
+  width: 100%;
+  height: 0.5px;
+  background: rgba(255,255,255,0.06);
+  opacity: 0.25;
+  flex-shrink: 0;
+}
+
+/* ====== 装饰 bracket ====== */
+.bracket-tr {
+  position: absolute;
+  top: 8px; right: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  opacity: 0.12;
+  pointer-events: none;
+  z-index: 2;
+}
+.bracket-h { width: 8px; height: 0.5px; background: #fff; }
+.bracket-v { width: 0.5px; height: 8px; background: #fff; }
+
+/* ====== 代码高亮 ====== */
+.kw { color: #C8963E; }
+.fn { color: #6B8FA8; }
+.str { color: #5B8C5A; }
+.cm { color: var(--text-muted); }
+
+/* ====== Markdown 渲染样式（聊天气泡内） ====== */
+.msg-content p { margin: 4px 0; }
+.msg-content p:first-child { margin-top: 0; }
+.msg-content p:last-child { margin-bottom: 0; }
+.msg-content h1 { font-size: 18px; margin: 12px 0 6px; font-weight: 600; }
+.msg-content h2 { font-size: 15px; margin: 10px 0 4px; font-weight: 600; }
+.msg-content h3 { font-size: 13px; margin: 8px 0 4px; font-weight: 600; }
+.msg-content ul, .msg-content ol { margin: 4px 0; padding-left: 20px; }
+.msg-content li { margin: 2px 0; }
+.msg-content a { color: var(--accent); text-decoration: none; }
+.msg-content blockquote { border-left: 2px solid var(--accent); margin: 6px 0; padding: 4px 12px; color: var(--text-secondary); background: rgba(var(--accent-rgb),0.04); border-radius: 0 4px 4px 0; }
+.msg-content code { background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; font-size: 11px; font-family: "Cascadia Code", "Fira Code", "Consolas", monospace; }
+.msg-content pre { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 11px; margin: 6px 0; line-height: 1.5; }
+.msg-content pre code { background: none; padding: 0; font-size: inherit; }
+.msg-content strong { font-weight: 600; color: var(--text-primary); }
+.msg-content table { border-collapse: collapse; margin: 6px 0; font-size: 12px; width: 100%; }
+.msg-content th, .msg-content td { border: 1px solid rgba(255,255,255,0.1); padding: 4px 10px; text-align: left; }
+.msg-content th { background: rgba(255,255,255,0.04); font-weight: 600; }
+.msg-content hr { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 10px 0; }
+
+/* ====== 面板拖拽把手 ====== */
+.panel-drag-handle {
+  position: absolute; left: -5px; top: 0; bottom: 0;
+  width: 10px; cursor: col-resize; z-index: 10;
+}
+.panel-drag-handle::after {
+  content: ""; position: absolute; left: 50%; top: 45%; transform: translateX(-50%);
+  width: 3px; height: 32px; border-radius: 2px;
+  background: var(--accent); opacity: 0;
+  transition: opacity 0.15s;
+}
+.panel-drag-handle:hover::after,
+.panel-drag-handle.dragging::after { opacity: 0.6; }
+
+/* ====== Grid 覆盖层 ====== */
+.overlay {
+  position: fixed; inset: 0; z-index: 20;
+  display: grid;
+  --right-panel-w: 0px;
+  grid-template-columns: var(--left-col) 1fr var(--right-panel-w);
+  grid-template-rows: auto 1fr auto;
+  gap: var(--gap);
+  padding: var(--margin);
+  pointer-events: none;
+}
+.overlay > * { pointer-events: auto; }
+
+/* 网格区域分配 */
+.overlay-nav-left    { grid-column: 1; grid-row: 1 / 4; min-height: 0; overflow: hidden; }
+.overlay-left-top    { grid-column: 2; grid-row: 1; min-height: 0; overflow: hidden; }
+.overlay-left-bottom { grid-column: 2; grid-row: 2; min-height: 0; display: flex; flex-direction: column; }
+.overlay-left-bottom > .glass-panel { flex: 1; min-height: 0; }
+.overlay-left-status { grid-column: 2; grid-row: 3; }
+.overlay-center-main { grid-column: 3; grid-row: 1 / 4; min-height: 0; display: flex; flex-direction: column;
+                       margin-left: 8px; }
+.overlay-right-panel { grid-column: 4; grid-row: 1 / 4; min-height: 0; overflow: visible; }
+
+/* ====== 顶部菜单栏：圆角梯形 ====== */
+.top-menu-toggle {
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+  z-index: 50;
+  width: 40px; height: 14px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.25s ease;
+  opacity: 0.55;
+}
+.top-menu-toggle:hover { opacity: 1; height: 18px; }
+.top-menu-toggle .toggle-arrow {
+  font-size: 8px; color: var(--text-secondary);
+  transition: transform 0.3s ease;
+  line-height: 1;
+}
+.top-menu-toggle.open .toggle-arrow { transform: rotate(180deg); }
+
+.top-menu-bar {
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%) translateY(-100%);
+  z-index: 45;
+  width: 480px;
+  clip-path: polygon(0 0, 100% 0, 94% 100%, 6% 100%);
+  background: rgb(var(--top-bar-tint-rgb));
+  border: 1px solid var(--glass-border);
+  border-top: none;
+  border-radius: 0 0 20px 20px;
+  padding: 20px 0 16px 0;
+  display: flex; align-items: center; justify-content: center; gap: 24px;
+  transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+  pointer-events: auto;
+}
+.top-menu-bar.open { transform: translateX(-50%) translateY(0); }
+
+/* ====== 少女祈祷中（多扩展共用） ====== */
+@keyframes praying-breathe {
+  0%, 100% {
+    background: rgba(248,113,113,0.7);
+    box-shadow: 0 0 4px rgba(248,113,113,0.5);
+    transform: scale(0.85);
+  }
+  50% {
+    background: rgba(74,222,128,0.9);
+    box-shadow: 0 0 8px rgba(74,222,128,0.6);
+    transform: scale(1.15);
+  }
+}
+.praying-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.praying-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: praying-breathe 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.praying-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  user-select: none;
+}
+.praying-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.06));
+  flex-shrink: 0;
+}
+.praying-bar .praying-text {
+  font-size: 13px;
+}
+
+/* ====== 脉冲文字动画（多扩展共用） ====== */
+@keyframes pulse-text {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ====== 小屏适配 ====== */
+@media (max-width: 1200px) {
+  :root { --left-col: 320px; --gap: 10px; --margin: 12px; }
+}
+@media (max-width: 900px) {
+  :root { --left-col: 280px; --gap: 8px; --margin: 8px; }
+}
+
+/* ====== 无障碍 ====== */
+
+/* Focus visible — 全局可见焦点环 */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+/* 输入框用更微妙的 focus */
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: none;
+  border-color: rgba(var(--accent-rgb),0.35);
+}
+
+/* 按钮重置 — 让 <button> 看起来像 div，保持键盘可访问 */
+button.unstyled {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-align: inherit;
+}
+
+/* 全局可点击元素 */
+[data-clickable] {
+  cursor: pointer;
+}
+
+/* Reduced motion — 关闭动画 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .praying-dot { animation: none; }
+}
+
+/* ====== 终端光标闪烁 ====== */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ====== Z-Index Scale ======
+   0     — 背景纹理 (body::before)
+   1     — 主内容区 (.glass-panel-full, App flex root)
+   2-9   — 面板内元素 (bracket, chat bubbles, etc.)
+   10    — 面板拖拽把手
+   20    — 旧 Grid overlay
+   45    — 顶部菜单栏
+   50    — 顶部菜单开关
+   55    — 设置全页面
+*/

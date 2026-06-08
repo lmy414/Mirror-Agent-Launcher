@@ -1,0 +1,60 @@
+# ── Node ──
+node_modules/
+npm-debug.log*
+
+# ── Build output ──
+dist/
+dist-electron/
+out/
+release/
+
+# ── IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+
+# ── Env ──
+.env
+.env.local
+.env.*.local
+
+# ── Logs ──
+logs/
+*.log
+
+# ── Vite cache ──
+.vite/
+
+# ── Electron dev ──
+dev-app-update.yml
+electron-v*.zip
+
+# ── Test ──
+coverage/
+
+# ── Temp ──
+test-*.cjs
+test-*.mjs
+test-*.js
+test-*.bat
+test-output.txt
+run-test.bat
+scripts/smoke-test.ts
+*.tmp
+
+# ── TypeScript ──
+*.tsbuildinfo
+
+# ── Claude Code ──
+.claude/
+
+# ── Desktop ini ──
+desktop.ini
+
+# ── Screenshots ──
+演示截图/

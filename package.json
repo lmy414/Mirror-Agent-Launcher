@@ -1,0 +1,60 @@
+{
+  "name": "mirror-agent-launcher",
+  "private": true,
+  "version": "0.0.1",
+  "main": "dist-electron/index.js",
+  "scripts": {
+    "dev": "vite",
+    "dev:electron": "concurrently \"vite\" \"tsc -p main/tsconfig.json\" \"wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "build": "vite build && tsc -p main/tsconfig.json",
+    "build:electron": "vite build && tsc -p main/tsconfig.json && electron-builder",
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "icon": "node scripts/generate-icon.mjs"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "lucide-solid": "^1.17.0",
+    "marked": "^12.0.0",
+    "node-pty": "^1.1.0",
+    "solid-js": "^1.8.0",
+    "xterm": "^5.3.0"
+  },
+  "devDependencies": {
+    "@vitest/runner": "^4.1.8",
+    "autoprefixer": "^10.4.0",
+    "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
+    "electron": "^42.3.3",
+    "electron-builder": "^26.15.2",
+    "postcss": "^8.4.0",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.5.0",
+    "vite": "^5.4.0",
+    "vite-plugin-solid": "^2.10.0",
+    "vitest": "^4.1.8",
+    "wait-on": "^9.0.10"
+  },
+  "build": {
+    "appId": "com.mirror.agent-launcher",
+    "productName": "Mirror Agent Launcher",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "public/**/*"
+    ],
+    "npmRebuild": false,
+    "nodeGypRebuild": false,
+    "buildDependenciesFromSource": false,
+    "win": {
+      "target": ["portable"],
+      "icon": "public/icon.png"
+    }
+  }
+}
