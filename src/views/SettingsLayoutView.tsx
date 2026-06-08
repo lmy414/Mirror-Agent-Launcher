@@ -1,23 +1,22 @@
 import type { JSX } from 'solid-js'
-import { createSignal, For, Show } from 'solid-js'
+import { createSignal, Show } from 'solid-js'
 import { accentRgb } from '@/shell/theme'
 import { Settings, Palette, Info } from 'lucide-solid'
 import { kbd } from './settings/shared'
 import { AgentConfigPage } from './settings/AgentConfigPage'
 import { DisplayPage } from './settings/DisplayPage'
-import { SkillsPage } from './settings/SkillsPage'
 import { SystemPage } from './settings/SystemPage'
 
-type SettingsPage = 'model' | 'display' | 'system'
+type SettingsPage = 'agent' | 'display' | 'system'
 
 const NAV_ITEMS: { id: SettingsPage; icon: () => JSX.Element; label: string; desc: string }[] = [
-  { id: 'model',   icon: () => <Settings size={14} />, label: '模型管理',   desc: 'API 密钥 · 模型选择 · 参数配置' },
+  { id: 'agent',   icon: () => <Settings size={14} />, label: 'Agent 管理', desc: 'CLI 工具配置 · 添加 · 参数编辑' },
   { id: 'display', icon: () => <Palette size={14} />,  label: '显示设置',   desc: '主题 · 壁纸 · 字体 · 布局' },
   { id: 'system',  icon: () => <Info size={14} />,     label: '系统信息',   desc: '版本 · 日志 · 关于澪号' },
 ]
 
 export default function SettingsLayoutView() {
-  const [page, setPage] = createSignal<SettingsPage>('model')
+  const [page, setPage] = createSignal<SettingsPage>('agent')
 
   return (
     <div class="glass-panel-full" style={{ display: 'flex' }}>
@@ -70,7 +69,7 @@ export default function SettingsLayoutView() {
           </div>
         </div>
         <div style={{ flex: '1', 'overflow-y': 'auto', padding: '20px 24px' }}>
-          <Show when={page() === 'model'}><AgentConfigPage /></Show>
+          <Show when={page() === 'agent'}><AgentConfigPage /></Show>
           <Show when={page() === 'display'}><DisplayPage /></Show>
           <Show when={page() === 'system'}><SystemPage /></Show>
         </div>
