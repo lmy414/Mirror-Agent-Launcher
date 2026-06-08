@@ -49,12 +49,30 @@
       "dist-electron/**/*",
       "public/**/*"
     ],
-    "npmRebuild": false,
-    "nodeGypRebuild": false,
-    "buildDependenciesFromSource": false,
+    "extraResources": [
+      {
+        "from": "public/live2d",
+        "to": "live2d"
+      }
+    ],
+    "npmRebuild": true,
     "win": {
-      "target": ["portable"],
-      "icon": "public/icon.png"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "shortcutName": "澪号 Agent",
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico"
     }
   }
 }
