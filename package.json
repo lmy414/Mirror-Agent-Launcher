@@ -1,7 +1,9 @@
 {
   "name": "mirror-agent-launcher",
-  "private": true,
   "version": "0.0.1",
+  "description": "澪号 Agent — 统一 CLI 智能体桌面管理启动器",
+  "author": "Mirror",
+  "private": true,
   "main": "dist-electron/index.js",
   "scripts": {
     "dev": "vite",
@@ -55,7 +57,7 @@
         "to": "live2d"
       }
     ],
-    "npmRebuild": true,
+    "npmRebuild": false,
     "win": {
       "target": [
         {
