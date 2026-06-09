@@ -18,7 +18,9 @@ class PtyManager {
   spawn(toolId: string, opts: { command: string; args: string[]; cwd: string; env: Record<string, string>; cols?: number; rows?: number; id?: string; displayName?: string }, owner: WebContents): PtySession {
     const id = opts.id || `pty-${toolId}-${Date.now()}`
 
-    const spawnEnv = { ...opts.env, TERM: 'xterm-256color' }
+    const spawnEnv: Record<string, string> = { ...opts.env, TERM: 'xterm-256color' }
+    // 诊断
+    logger.info('pty:spawn', 'env keys', { id, keys: Object.keys(spawnEnv).sort().join(','), pathLen: (spawnEnv['PATH'] || '').length, hasComSpec: !!(spawnEnv['ComSpec'] || spawnEnv['comspec']) })
 
     const pty = spawn(opts.command, opts.args, {
       cwd: opts.cwd,
