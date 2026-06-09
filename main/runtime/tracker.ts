@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron'
+import { type WebContents } from 'electron'
 import { logger } from '../logger'
 
 export interface RuntimeRecord {
@@ -14,8 +14,9 @@ export interface RuntimeRecord {
 
 class RuntimeTracker {
   private sessions = new Map<string, RuntimeRecord>()
+  private sessionOwners = new Map<string, WebContents>()
 
-  start(sessionId: string, toolId: string, displayName: string): void {
+  start(sessionId: string, toolId: string, displayName: string, owner: WebContents): void {
     this.sessions.set(sessionId, {
       sessionId,
       toolId,
@@ -24,6 +25,7 @@ class RuntimeTracker {
       tokensIn: 0,
       tokensOut: 0,
     })
+    this.sessionOwners.set(sessionId, owner)
     this.broadcast()
     logger.info('runtime', '会话开始', { sessionId, toolId })
   }
@@ -41,6 +43,7 @@ class RuntimeTracker {
         tokensOut: s.tokensOut,
       })
     }
+    this.sessionOwners.delete(sessionId)
   }
 
   /** 解析终端输出中的 token 信息，自动累加 */
@@ -84,8 +87,10 @@ class RuntimeTracker {
 
   private broadcast(): void {
     const list = this.getAll()
-    for (const win of BrowserWindow.getAllWindows()) {
-      win.webContents.send('runtime:update', list)
+    for (const [sessionId, owner] of this.sessionOwners) {
+      if (!owner.isDestroyed()) {
+        owner.send('runtime:update', list)
+      }
     }
   }
 }

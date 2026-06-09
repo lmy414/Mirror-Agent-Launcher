@@ -18,6 +18,24 @@ export interface ConfigSection {
   fields: ConfigField[]
 }
 
+/** 模型厂商/提供商配置 */
+export interface ProviderConfig {
+  /** 厂商 ID，如 'anthropic' | 'deepseek' */
+  id: string
+  /** 显示名称 */
+  label: string
+  /** 可用模型列表 */
+  models: { id: string; label: string }[]
+  /** 默认注入的环境变量 */
+  defaultEnv: Record<string, string>
+  /** 从用户配置构建运行时环境变量 */
+  buildEnv(userConfig: Record<string, unknown>): Record<string, string>
+  /** 返回该厂商的配置表单 schema */
+  getFormSchema(): ConfigSection[]
+  /** 校验用户配置 */
+  validate(config: Record<string, unknown>): string[]
+}
+
 /** CLI 工具适配器接口 */
 export interface ConfigAdapter {
   toolId: string
@@ -45,4 +63,10 @@ export interface ConfigAdapter {
     cwd: string
     env: Record<string, string>
   }
+
+  /** 返回该工具支持的厂商列表（可选，不支持返回空数组） */
+  getProviders?(): ProviderConfig[]
+
+  /** 返回原生配置文件路径（可选，用于「查看原始配置」） */
+  getConfigPath?(): string
 }

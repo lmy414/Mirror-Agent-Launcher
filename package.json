@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "vite",
     "dev:electron": "concurrently \"vite\" \"tsc -p main/tsconfig.json\" \"wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "dev:fast": "concurrently \"vite\" \"wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
     "build": "vite build && tsc -p main/tsconfig.json",
     "build:electron": "vite build && tsc -p main/tsconfig.json && electron-builder",
     "check": "tsc --noEmit",
@@ -49,7 +50,7 @@
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
-      "public/**/*"
+      "dist/assets/**/*"
     ],
     "extraResources": [
       {
@@ -58,11 +59,16 @@
       }
     ],
     "npmRebuild": false,
+    "asarUnpack": [
+      "node_modules/node-pty/**/*.node"
+    ],
     "win": {
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "public/icon.ico"

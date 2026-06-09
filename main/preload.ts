@@ -15,12 +15,14 @@ const electronAPI = {
     write: (toolId: string, partialConfig: Record<string, unknown>) =>
       ipcRenderer.invoke('config:write', { toolId, partialConfig }),
     schema: (toolId: string) => ipcRenderer.invoke('config:schema', { toolId }),
+    openFile: (toolId: string) => ipcRenderer.invoke('config:openFile', { toolId }),
+    providers: (toolId: string) => ipcRenderer.invoke('config:providers', { toolId }),
   },
 
   // ── Agent 进程管理 ──
   agent: {
-    spawn: (toolId: string, sessionId?: string, displayName?: string) =>
-      ipcRenderer.invoke('agent:spawn', { toolId, sessionId, displayName }),
+    spawn: (toolId: string, sessionId?: string, displayName?: string, cwd?: string) =>
+      ipcRenderer.invoke('agent:spawn', { toolId, sessionId, displayName, cwd }),
     stop: (sessionId: string) => ipcRenderer.invoke('agent:stop', { sessionId }),
     list: () => ipcRenderer.invoke('agent:list'),
     add: (toolId: string, displayName: string) => ipcRenderer.invoke('agent:add', { toolId, displayName }),
@@ -63,6 +65,11 @@ const electronAPI = {
   settings: {
     getAll: () => ipcRenderer.invoke('settings:get'),
     set: (key: string, value: string) => ipcRenderer.invoke('settings:set', { key, value }),
+  },
+
+  // ── 文件对话框 ──
+  dialog: {
+    openDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
   },
 
   // ── 运行记录 ──

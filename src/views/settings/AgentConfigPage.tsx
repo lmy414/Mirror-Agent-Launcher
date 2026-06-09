@@ -1,9 +1,19 @@
 import { createSignal, For, Show, onMount } from 'solid-js'
-import { configList, agentAdd, configWrite } from '@/bridge/ipc-client'
+import { Plus, FileText, Settings } from 'lucide-solid'
+import { configList, configRead, configWrite, agentAdd, settingsGetAll } from '@/bridge/ipc-client'
+import { AgentDetailPanel } from './AgentDetailPanel'
+import './AgentConfigPage.css'
+
+interface AgentEntry {
+  toolId: string
+  displayName: string
+  installed: boolean
+  askWorkingDir: boolean
+}
 
 export function AgentConfigPage() {
-  const [agents, setAgents] = createSignal<{ id: string; name: string; command: string; dir: string; status: string }[]>([])
-  const [editId, setEditId] = createSignal<string | null>(null)
+  const [agents, setAgents] = createSignal<AgentEntry[]>([])
+  const [selectedId, setSelectedId] = createSignal<string | null>(null)
   const [showAdd, setShowAdd] = createSignal(false)
   const [newName, setNewName] = createSignal('')
   const [newCmd, setNewCmd] = createSignal('')
@@ -11,74 +21,136 @@ export function AgentConfigPage() {
 
   onMount(async () => {
     const list = await configList()
+    const allSettings = await settingsGetAll()
     setAgents(list.map((a) => ({
-      id: a.toolId,
-      name: a.displayName,
-      command: '',
-      dir: '',
-      status: a.installed ? 'running' : 'stopped',
+      toolId: a.toolId,
+      displayName: a.displayName,
+      installed: a.installed,
+      askWorkingDir: allSettings[`agent:${a.toolId}:askWorkingDir`] === 'true',
     })))
+    // 默认选中第一个
+    if (list.length > 0) {
+      setSelectedId(list[0].toolId)
+    }
   })
 
+  const selected = () => agents().find((a) => a.toolId === selectedId())
+
+  const installed = () => agents().filter((a) => a.installed)
+  const adapted = () => agents()
+
+  const handleAddAgent = async () => {
+    if (!newName()) return
+    const toolId = 'agent-' + Date.now()
+    await agentAdd(toolId, newName())
+    if (newCmd() || newDir()) {
+      await configWrite(toolId, { command: newCmd() || newName(), cwd: newDir() || '' })
+    }
+    const list = await configList()
+    const allSettings = await settingsGetAll()
+    setAgents(list.map((a) => ({
+      toolId: a.toolId,
+      displayName: a.displayName,
+      installed: a.installed,
+      askWorkingDir: allSettings[`agent:${a.toolId}:askWorkingDir`] === 'true',
+    })))
+    setNewName(''); setNewCmd(''); setNewDir(''); setShowAdd(false)
+    setSelectedId(toolId)
+  }
+
   return (
-    <>
-      <div style={{ display: 'flex', 'flex-direction': 'column', gap: '8px' }}>
-        <button onClick={() => setShowAdd(!showAdd())}
-          style={{ padding: '8px 14px', 'border-radius': '6px', cursor: 'pointer', background: 'rgba(var(--accent-rgb), 0.1)', border: '1px dashed rgba(var(--accent-rgb), 0.3)', color: 'var(--accent)', 'font-size': '12px', 'font-family': 'inherit', display: 'flex', 'align-items': 'center', gap: '6px', 'justify-content': 'center' }}>
-          + 添加 Agent
+    <div class="agent-page">
+      {/* ── 左侧：CLI 工具列表 ── */}
+      <div class="agent-page__sidebar">
+        {/* 已安装 */}
+        <div class="agent-page__sidebar-section agent-page__sidebar-section--installed">
+          <div class="agent-page__sidebar-header">
+            <span>已安装的 CLI 工具</span>
+            <span class="agent-page__sidebar-count">{installed().length}</span>
+          </div>
+          <div class="agent-page__sidebar-list">
+            <For each={installed()} fallback={
+              <div style={{ padding: '12px', 'font-size': '11px', color: 'var(--text-muted)', opacity: '0.5', 'text-align': 'center' }}>
+                未检测到已安装的工具
+              </div>
+            }>
+              {(agent) => (
+                <div
+                  class="agent-page__sidebar-item"
+                  classList={{ 'agent-page__sidebar-item--selected': selectedId() === agent.toolId }}
+                  onClick={() => setSelectedId(agent.toolId)}
+                >
+                  <span class="agent-page__sidebar-item-dot agent-page__sidebar-item-dot--installed" />
+                  <span class="agent-page__sidebar-item-name">{agent.displayName}</span>
+                </div>
+              )}
+            </For>
+          </div>
+        </div>
+
+        {/* 已适配 */}
+        <div class="agent-page__sidebar-section agent-page__sidebar-section--adapted">
+          <div class="agent-page__sidebar-header">
+            <span>已适配的 CLI 工具</span>
+            <span class="agent-page__sidebar-count">{adapted().length}</span>
+          </div>
+          <div class="agent-page__sidebar-list">
+            <For each={adapted()}>
+              {(agent) => (
+                <div
+                  class="agent-page__sidebar-item"
+                  classList={{ 'agent-page__sidebar-item--selected': selectedId() === agent.toolId }}
+                  onClick={() => setSelectedId(agent.toolId)}
+                >
+                  <span
+                    class="agent-page__sidebar-item-dot"
+                    classList={{
+                      'agent-page__sidebar-item-dot--installed': agent.installed,
+                      'agent-page__sidebar-item-dot--not-installed': !agent.installed,
+                    }}
+                  />
+                  <span class="agent-page__sidebar-item-name">{agent.displayName}</span>
+                  {!agent.installed && <span class="agent-page__sidebar-item-tag">未安装</span>}
+                </div>
+              )}
+            </For>
+          </div>
+        </div>
+
+        {/* 添加自定义工具 */}
+        <button class="agent-page__add-btn" onClick={() => setShowAdd(!showAdd())}>
+          <Plus size={14} />
+          添加 CLI 工具
         </button>
+
         <Show when={showAdd()}>
-          <div style={{ padding: '12px', background: 'var(--card-bg)', 'border-radius': '8px', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', 'flex-direction': 'column', gap: '8px' }}>
-            <input placeholder="名称" value={newName()} onInput={(e) => setNewName(e.currentTarget.value)}
-              style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)', 'border-radius': '4px', padding: '8px 12px', color: 'var(--text-primary)', 'font-size': '13px', 'font-family': 'inherit', outline: 'none' }} />
-            <input placeholder="启动命令" value={newCmd()} onInput={(e) => setNewCmd(e.currentTarget.value)}
-              style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)', 'border-radius': '4px', padding: '8px 12px', color: 'var(--text-primary)', 'font-size': '13px', 'font-family': '"JetBrains Mono", monospace', outline: 'none' }} />
-            <input placeholder="工作目录" value={newDir()} onInput={(e) => setNewDir(e.currentTarget.value)}
-              style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)', 'border-radius': '4px', padding: '8px 12px', color: 'var(--text-primary)', 'font-size': '13px', 'font-family': '"JetBrains Mono", monospace', outline: 'none' }} />
+          <div class="agent-page__add-form">
+            <input class="agent-detail__input" placeholder="工具名称" value={newName()} onInput={(e) => setNewName(e.currentTarget.value)} />
+            <input class="agent-detail__input" placeholder="启动命令（如 codewhale）" value={newCmd()} onInput={(e) => setNewCmd(e.currentTarget.value)} />
+            <input class="agent-detail__input" placeholder="工作目录" value={newDir()} onInput={(e) => setNewDir(e.currentTarget.value)} />
             <div style={{ display: 'flex', gap: '8px', 'justify-content': 'flex-end' }}>
-              <button onClick={() => setShowAdd(false)} style={{ padding: '6px 12px', 'border-radius': '4px', cursor: 'pointer', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-muted)', 'font-size': '12px', 'font-family': 'inherit' }}>取消</button>
-              <button onClick={async () => {
-                if (!newName()) return
-                const toolId = 'agent-' + Date.now()
-                await agentAdd(toolId, newName())
-                if (newCmd() || newDir()) {
-                  await configWrite(toolId, { command: newCmd() || newName(), cwd: newDir() || '' })
-                }
-                setAgents((prev) => [...prev, { id: toolId, name: newName(), command: newCmd() || newName(), dir: newDir() || '', status: 'stopped' }])
-                setNewName(''); setNewCmd(''); setNewDir(''); setShowAdd(false)
-              }} style={{ padding: '6px 12px', 'border-radius': '4px', cursor: 'pointer', background: 'rgba(var(--accent-rgb), 0.2)', border: 'none', color: 'var(--accent)', 'font-size': '12px', 'font-family': 'inherit' }}>添加</button>
+              <button class="agent-detail__view-config" onClick={() => setShowAdd(false)}>取消</button>
+              <button class="agent-detail__save-btn" onClick={handleAddAgent}>添加</button>
             </div>
           </div>
         </Show>
-        <For each={agents()}>
-          {(agent) => (
-            <div style={{ background: 'var(--card-bg)', border: '1px solid rgba(255,255,255,0.04)', 'border-radius': '8px', overflow: 'hidden' }}>
-              <div style={{ display: 'flex', 'align-items': 'center', gap: '10px', padding: '12px 16px', cursor: 'pointer', background: editId() === agent.id ? 'rgba(255,255,255,0.03)' : 'transparent' }}
-                onClick={() => setEditId(editId() === agent.id ? null : agent.id)}>
-                <div style={{ width: '8px', height: '8px', 'border-radius': '50%', background: agent.status === 'running' ? 'var(--success)' : 'var(--text-muted)' }} />
-                <div style={{ flex: '1' }}>
-                  <div style={{ 'font-size': '14px', 'font-weight': '500' }}>{agent.name}</div>
-                  <div style={{ 'font-size': '10px', color: 'var(--text-muted)', 'font-family': '"JetBrains Mono", monospace' }}>{agent.command}</div>
-                </div>
-                <span style={{ 'font-size': '11px', color: 'var(--text-muted)' }}>{agent.status}</span>
-              </div>
-              <Show when={editId() === agent.id}>
-                <div style={{ padding: '12px 16px', 'border-top': '1px solid rgba(255,255,255,0.04)', display: 'flex', 'flex-direction': 'column', gap: '8px' }}>
-                  <div><div style={{ 'font-size': '10px', color: 'var(--text-muted)', 'margin-bottom': '2px' }}>名称</div>
-                    <input value={agent.name} onInput={(e) => setAgents((prev) => prev.map((a) => a.id === agent.id ? { ...a, name: e.currentTarget.value } : a))}
-                      style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)', 'border-radius': '4px', padding: '6px 10px', color: 'var(--text-primary)', 'font-size': '12px', 'font-family': 'inherit', outline: 'none' }} /></div>
-                  <div><div style={{ 'font-size': '10px', color: 'var(--text-muted)', 'margin-bottom': '2px' }}>启动命令</div>
-                    <input value={agent.command} onInput={(e) => setAgents((prev) => prev.map((a) => a.id === agent.id ? { ...a, command: e.currentTarget.value } : a))}
-                      style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)', 'border-radius': '4px', padding: '6px 10px', color: 'var(--text-primary)', 'font-size': '12px', 'font-family': '"JetBrains Mono", monospace', outline: 'none' }} /></div>
-                  <div><div style={{ 'font-size': '10px', color: 'var(--text-muted)', 'margin-bottom': '2px' }}>工作目录</div>
-                    <input value={agent.dir} onInput={(e) => setAgents((prev) => prev.map((a) => a.id === agent.id ? { ...a, dir: e.currentTarget.value } : a))}
-                      style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.06)', 'border-radius': '4px', padding: '6px 10px', color: 'var(--text-primary)', 'font-size': '12px', 'font-family': '"JetBrains Mono", monospace', outline: 'none' }} /></div>
-                </div>
-              </Show>
-            </div>
-          )}
-        </For>
       </div>
-    </>
+
+      {/* ── 右侧：详情面板 ── */}
+      <div class="agent-page__detail">
+        <Show when={selected()} fallback={
+          <div class="agent-page__detail-empty">
+            <Settings size={32} />
+            <span>从左侧选择一个 CLI 工具</span>
+          </div>
+        }>
+          <AgentDetailPanel
+            toolId={selected()!.toolId}
+            displayName={selected()!.displayName}
+            installed={selected()!.installed}
+          />
+        </Show>
+      </div>
+    </div>
   )
 }

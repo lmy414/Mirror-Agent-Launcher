@@ -25,15 +25,24 @@ export async function configWrite(toolId: string, partialConfig: Record<string, 
   return window.electronAPI.config.write(toolId, partialConfig)
 }
 
+export async function configProviders(toolId: string): Promise<{
+  ok: boolean
+  data?: { id: string; label: string; models: { id: string; label: string }[]; sections: { id: string; label: string; description?: string; fields: { key: string; label: string; type: string; description?: string; defaultValue: unknown; required: boolean; options?: { label: string; value: string }[]; placeholder?: string }[] }[] }[]
+  error?: { code: string; message: string }
+}> {
+  if (!isElectron) return { ok: false, error: { code: 'NO_ELECTRON', message: '非 Electron 环境' } }
+  return window.electronAPI.config.providers(toolId)
+}
+
 export async function configSchema(toolId: string): Promise<{ ok: boolean; data?: { sections: unknown[] }; error?: { code: string; message: string } }> {
   if (!isElectron) return mockResponse({ sections: [] })
   return window.electronAPI.config.schema(toolId)
 }
 
 // ── Agent ──
-export async function agentSpawn(toolId: string, sessionId?: string, displayName?: string): Promise<{ ok: boolean; data?: { sessionId: string }; error?: { code: string; message: string } }> {
+export async function agentSpawn(toolId: string, sessionId?: string, displayName?: string, cwd?: string): Promise<{ ok: boolean; data?: { sessionId: string }; error?: { code: string; message: string } }> {
   if (!isElectron) return { ok: false, error: { code: 'NO_ELECTRON', message: '非 Electron 环境' } }
-  return window.electronAPI.agent.spawn(toolId, sessionId, displayName)
+  return window.electronAPI.agent.spawn(toolId, sessionId, displayName, cwd)
 }
 
 export async function agentStop(sessionId: string): Promise<{ ok: boolean }> {
@@ -103,6 +112,12 @@ export async function settingsGetAll(): Promise<Record<string, string>> {
 
 export async function settingsSet(key: string, value: string): Promise<void> {
   window.electronAPI?.settings.set(key, value)
+}
+
+// ── 文件对话框 ──
+export async function dialogOpenDirectory(): Promise<string | null> {
+  if (!isElectron) return null
+  return window.electronAPI.dialog.openDirectory()
 }
 
 // ── 运行记录 ──

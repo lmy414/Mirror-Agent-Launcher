@@ -8,11 +8,13 @@ import { logger } from './logger'
 import { adapterRegistry } from './adapters/registry'
 import { ClaudeCodeAdapter } from './adapters/claude-code'
 import { GenericAdapter } from './adapters/generic'
-import { loadWindowState, saveWindowState } from './store/app-state'
+import { loadWindowState, saveWindowState, type WindowState } from './store/app-state'
 
 let mainWindow: BrowserWindow | null = null
 
-const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL
+function isDev(): boolean {
+  return !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL
+}
 
 function createWindow() {
   const saved = loadWindowState()
@@ -35,7 +37,9 @@ function createWindow() {
 
   if (saved.isMaximized) mainWindow.maximize()
 
-  if (isDev && process.env.VITE_DEV_SERVER_URL) {
+  logger.subscribe(mainWindow.webContents)
+
+  if (isDev() && process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL)
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {
@@ -43,19 +47,41 @@ function createWindow() {
   }
 
   // 保存窗口状态
+  // 防抖保存窗口状态，避免 resize 高频触发同步 I/O
+  let saveTimeout: NodeJS.Timeout | null = null
+  const debouncedSave = (state: WindowState) => {
+    if (saveTimeout) clearTimeout(saveTimeout)
+    saveTimeout = setTimeout(() => saveWindowState(state), 300)
+  }
+
   mainWindow.on('resize', () => {
     if (mainWindow && !mainWindow.isMaximized()) {
       const [w, h] = mainWindow.getSize()
       const [x, y] = mainWindow.getPosition()
-      saveWindowState({ x, y, width: w, height: h, isMaximized: false })
+      debouncedSave({ x, y, width: w, height: h, isMaximized: false })
     }
   })
   mainWindow.on('maximize', () => saveWindowState({ ...saved, isMaximized: true }))
   mainWindow.on('unmaximize', () => saveWindowState({ ...saved, isMaximized: false }))
-  mainWindow.on('closed', () => { mainWindow = null })
+  mainWindow.on('closed', () => {
+    if (mainWindow) {
+      logger.unsubscribe(mainWindow.webContents)
+    }
+    mainWindow = null
+  })
 }
 
 // ── 窗口 IPC ──
+function registerDialogIpc() {
+  ipcMain.handle('dialog:openDirectory', async () => {
+    const { dialog } = await import('electron')
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory'],
+    })
+    return result.canceled ? null : result.filePaths[0]
+  })
+}
+
 function registerWindowIpc() {
   ipcMain.on('window:minimize', () => mainWindow?.minimize())
   ipcMain.on('window:maximize', () => {
@@ -82,6 +108,7 @@ app.whenReady().then(() => {
   // 通用适配器由前端通过 agent:add 动态创建
 
   registerWindowIpc()
+  registerDialogIpc()
   registerConfigIpc()
   registerTerminalIpc()
   registerAgentIpc()

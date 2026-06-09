@@ -48,6 +48,39 @@ export function setTerminalRunning(id: string, running: boolean) {
   setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, running } : s)))
 }
 
+// ── stdout 全局缓冲（解决竞态：PTY 先产数据，组件后挂载）──
+const stdoutBuffer = new Map<string, string[]>()
+let globalUnsub: (() => void) | null = null
+
+// 模块加载时立即注册全局监听（比任何组件 onMount 都早）
+if (typeof window !== 'undefined' && window.electronAPI) {
+  globalUnsub = onTerminalStdout(({ sessionId, data }) => {
+    let buf = stdoutBuffer.get(sessionId)
+    if (!buf) {
+      buf = []
+      stdoutBuffer.set(sessionId, buf)
+    }
+    buf.push(data)
+  })
+}
+
+/** 为指定 session 设置直接管道（替换全局缓冲），返回已缓冲数据 */
+function setupPerSession(sessionId: string, writeFn: (data: string) => void): string {
+  // 全局监听器在模块加载时已注册，此处无需再注册
+  const oldBuf = stdoutBuffer.get(sessionId) ?? []
+  const pending = oldBuf.join('')
+  // 原子替换：后续 push 直接写入 xterm
+  const live: string[] = []
+  Object.defineProperty(live, 'push', { value: (chunk: string) => { writeFn(chunk); return 1 } })
+  stdoutBuffer.set(sessionId, live)
+  return pending
+}
+
+/** 清理 per-session 状态 */
+function teardownPerSession(sessionId: string) {
+  stdoutBuffer.delete(sessionId)
+}
+
 // ── 单个终端窗口组件 ──
 export function TerminalWindow(props: {
   session: TerminalSessionInfo
@@ -80,12 +113,15 @@ export function TerminalWindow(props: {
       terminalStdin(props.session.id, data)
     })
 
-    // ── PTY stdout → xterm ──
-    const unsubStdout = onTerminalStdout(({ sessionId, data }) => {
-      if (sessionId === props.session.id && term) {
-        term.write(data)
-      }
-    })
+    // ── 重放缓冲数据 + 建立直接管道 ──
+    const writeToTerm = (data: string) => {
+      if (term) term.write(data)
+    }
+    const pending = setupPerSession(props.session.id, writeToTerm)
+    // 回放组件挂载前已缓冲的输出
+    if (pending) {
+      term.write(pending)
+    }
 
     // ── PTY exit ──
     const unsubExit = onTerminalExit(({ sessionId, exitCode }) => {
@@ -107,8 +143,8 @@ export function TerminalWindow(props: {
     resizeObserver.observe(containerRef)
 
     onCleanup(() => {
-      unsubStdout()
       unsubExit()
+      teardownPerSession(props.session.id)
       resizeObserver.disconnect()
       term?.dispose()
     })

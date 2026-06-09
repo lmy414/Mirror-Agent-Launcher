@@ -2,7 +2,7 @@ import { app } from 'electron'
 import path from 'path'
 import fs from 'fs'
 
-interface WindowState {
+export interface WindowState {
   x?: number
   y?: number
   width: number
@@ -39,7 +39,11 @@ export function loadState(): AppPersistState {
 export function saveState(state: Partial<AppPersistState>): void {
   const current = loadState()
   const merged = { ...current, ...state, lastOpenedAt: Date.now() }
-  fs.writeFileSync(storePath(), JSON.stringify(merged, null, 2), 'utf-8')
+  // 改为异步写入，避免阻塞主进程事件循环
+  const file = storePath()
+  fs.promises.writeFile(file, JSON.stringify(merged, null, 2), 'utf-8').catch(() => {
+    // 静默忽略写入失败
+  })
 }
 
 export function saveWindowState(state: WindowState): void {

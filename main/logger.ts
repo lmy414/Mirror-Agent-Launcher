@@ -1,4 +1,4 @@
-import { BrowserWindow, type WebContents, app } from 'electron'
+import { type WebContents, app } from 'electron'
 import fs from 'fs'
 import path from 'path'
 
@@ -15,6 +15,7 @@ interface LogEntry {
 class Logger {
   private buffer: LogEntry[] = []
   private logFile: string
+  private subscribers = new Set<WebContents>()
 
   constructor() {
     // 在 app ready 之前延迟初始化路径
@@ -48,6 +49,14 @@ class Logger {
     this.emit(this.format(layer, 'ERROR', message, context))
   }
 
+  subscribe(wc: WebContents): void {
+    this.subscribers.add(wc)
+  }
+
+  unsubscribe(wc: WebContents): void {
+    this.subscribers.delete(wc)
+  }
+
   private emit(entry: LogEntry): void {
     this.buffer.push(entry)
     if (this.buffer.length > 1000) this.buffer.shift()
@@ -56,9 +65,11 @@ class Logger {
     const ctx = entry.context ? ` -- ${JSON.stringify(entry.context)}` : ''
     console.log(`${prefix} ${entry.message}${ctx}`)
 
-    // 广播到渲染进程
-    for (const win of BrowserWindow.getAllWindows()) {
-      win.webContents.send('log:stream', entry)
+    // 只发给已订阅的渲染进程
+    for (const wc of this.subscribers) {
+      if (!wc.isDestroyed()) {
+        wc.send('log:stream', entry)
+      }
     }
 
     // 写入文件

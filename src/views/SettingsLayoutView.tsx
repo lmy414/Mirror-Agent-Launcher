@@ -1,18 +1,20 @@
 import type { JSX } from 'solid-js'
-import { createSignal, Show } from 'solid-js'
+import { createSignal, Show, For } from 'solid-js'
 import { accentRgb } from '@/shell/theme'
-import { Settings, Palette, Info } from 'lucide-solid'
+import { Settings, Palette, Info, FolderOpen } from 'lucide-solid'
 import { kbd } from './settings/shared'
 import { AgentConfigPage } from './settings/AgentConfigPage'
 import { DisplayPage } from './settings/DisplayPage'
+import { WorkingDirPage } from './settings/WorkingDirPage'
 import { SystemPage } from './settings/SystemPage'
 
-type SettingsPage = 'agent' | 'display' | 'system'
+type SettingsPage = 'agent' | 'display' | 'working-dir' | 'system'
 
 const NAV_ITEMS: { id: SettingsPage; icon: () => JSX.Element; label: string; desc: string }[] = [
-  { id: 'agent',   icon: () => <Settings size={14} />, label: 'Agent 管理', desc: 'CLI 工具配置 · 添加 · 参数编辑' },
-  { id: 'display', icon: () => <Palette size={14} />,  label: '显示设置',   desc: '主题 · 壁纸 · 字体 · 布局' },
-  { id: 'system',  icon: () => <Info size={14} />,     label: '系统信息',   desc: '版本 · 日志 · 关于澪号' },
+  { id: 'agent',       icon: () => <Settings size={14} />, label: 'Agent 管理', desc: 'CLI 工具配置 · 添加 · 参数编辑' },
+  { id: 'display',     icon: () => <Palette size={14} />,  label: '显示设置',   desc: '主题 · 壁纸 · 字体 · 布局' },
+  { id: 'working-dir', icon: () => <FolderOpen size={14} />, label: '工作目录',  desc: '管理常用目录 · 快速切换' },
+  { id: 'system',      icon: () => <Info size={14} />,     label: '系统信息',   desc: '版本 · 日志 · 关于澪号' },
 ]
 
 export default function SettingsLayoutView() {
@@ -68,9 +70,10 @@ export default function SettingsLayoutView() {
             設定 &gt; {NAV_ITEMS.find((n) => n.id === page())?.label ?? ''}
           </div>
         </div>
-        <div style={{ flex: '1', 'overflow-y': 'auto', padding: '20px 24px' }}>
+        <div style={{ flex: '1', 'overflow-y': 'auto', padding: '20px 24px', display: 'flex', 'flex-direction': 'column' }}>
           <Show when={page() === 'agent'}><AgentConfigPage /></Show>
           <Show when={page() === 'display'}><DisplayPage /></Show>
+          <Show when={page() === 'working-dir'}><WorkingDirPage /></Show>
           <Show when={page() === 'system'}><SystemPage /></Show>
         </div>
       </div>

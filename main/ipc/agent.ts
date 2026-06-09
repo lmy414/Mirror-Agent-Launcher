@@ -3,9 +3,13 @@ import { ptyManager } from '../pty/manager'
 import { adapterRegistry } from '../adapters/registry'
 import { GenericAdapter } from '../adapters/generic'
 import { logger } from '../logger'
+import { validateToolId } from '../utils/validation'
 
 export function registerAgentIpc(): void {
-  ipcMain.handle('agent:spawn', (_e, { toolId, sessionId, displayName }: { toolId: string; sessionId?: string; displayName?: string }) => {
+  ipcMain.handle('agent:spawn', (event, { toolId, sessionId, displayName, cwd: customCwd }: { toolId: string; sessionId?: string; displayName?: string; cwd?: string }) => {
+    if (!validateToolId(toolId)) {
+      return { ok: false, error: { code: 'INVALID_TOOL_ID', message: 'toolId 包含非法字符' } }
+    }
     const adapter = adapterRegistry.get(toolId)
     if (!adapter) {
       return { ok: false, error: { code: 'ADAPTER_NOT_FOUND', message: `未找到适配器: ${toolId}` } }
@@ -14,17 +18,18 @@ export function registerAgentIpc(): void {
     try {
       const config = adapter.read()
       const { command, args, cwd, env } = adapter.getCommand(config)
+      const finalCwd = customCwd || cwd
 
       const session = ptyManager.spawn(toolId, {
         command,
         args,
-        cwd,
+        cwd: finalCwd,
         env,
         cols: 120,
         rows: 40,
         id: sessionId,
         displayName: displayName || adapter.displayName,
-      })
+      }, event.sender)
 
       return { ok: true, data: { sessionId: session.id } }
     } catch (err: unknown) {
@@ -55,6 +60,12 @@ export function registerAgentIpc(): void {
 
   // 动态添加通用适配器
   ipcMain.handle('agent:add', (_e, { toolId, displayName }: { toolId: string; displayName: string }) => {
+    if (!validateToolId(toolId)) {
+      return { ok: false, error: { code: 'INVALID_TOOL_ID', message: 'toolId 包含非法字符' } }
+    }
+    if (typeof displayName !== 'string' || displayName.length === 0 || displayName.length > 128) {
+      return { ok: false, error: { code: 'INVALID_DISPLAY_NAME', message: 'displayName 格式不正确' } }
+    }
     if (adapterRegistry.get(toolId)) {
       return { ok: false, error: { code: 'DUPLICATE', message: `适配器 ${toolId} 已存在` } }
     }
@@ -66,6 +77,9 @@ export function registerAgentIpc(): void {
 
   // 移除动态适配器
   ipcMain.handle('agent:remove', (_e, { toolId }: { toolId: string }) => {
+    if (!validateToolId(toolId)) {
+      return { ok: false, error: { code: 'INVALID_TOOL_ID', message: 'toolId 包含非法字符' } }
+    }
     const adapter = adapterRegistry.get(toolId)
     if (!adapter) {
       return { ok: false, error: { code: 'ADAPTER_NOT_FOUND', message: `未找到适配器: ${toolId}` } }

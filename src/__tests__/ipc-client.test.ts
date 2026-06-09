@@ -25,6 +25,8 @@ function mockAPI(): ElectronAPI {
         ok: true,
         data: { sections: [{ id: 'main', label: 'Main', fields: [] }] },
       }),
+      openFile: vi.fn().mockResolvedValue({ ok: true, data: { opened: true } }),
+      providers: vi.fn().mockResolvedValue({ ok: true, data: [] }),
     },
     agent: {
       spawn: vi.fn().mockResolvedValue({ ok: true, data: { sessionId: 'sess-1' } }),
@@ -32,6 +34,9 @@ function mockAPI(): ElectronAPI {
       list: vi.fn().mockResolvedValue({ ok: true, data: { running: [] } }),
       add: vi.fn().mockResolvedValue({ ok: true }),
       remove: vi.fn().mockResolvedValue({ ok: true }),
+    },
+    dialog: {
+      openDirectory: vi.fn().mockResolvedValue('D:\\test-dir'),
     },
     terminal: {
       stdin: vi.fn(),

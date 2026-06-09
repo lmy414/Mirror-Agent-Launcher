@@ -194,6 +194,7 @@ export function DisplayPage() {
           </Show>
         </div>
       </div>
+
     </>
   )
 }

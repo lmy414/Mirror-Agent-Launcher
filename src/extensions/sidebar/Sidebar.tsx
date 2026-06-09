@@ -1,7 +1,9 @@
 import { createSignal, createMemo, For, Show, onMount, onCleanup } from 'solid-js'
+import { Portal } from 'solid-js/web'
 import { Terminal, Plus, Search, Clock, Zap } from 'lucide-solid'
 import { addTerminalSession, removeTerminalSession } from '@/extensions/terminal-view/TerminalView'
-import { configList, agentSpawn, onRuntimeUpdate, type RuntimeRecord } from '@/bridge/ipc-client'
+import { configList, agentSpawn, settingsGetAll, settingsSet, onRuntimeUpdate, type RuntimeRecord } from '@/bridge/ipc-client'
+import { WorkingDirPicker } from '@/components/working-dir-picker'
 
 interface AgentEntry {
   toolId: string
@@ -35,6 +37,7 @@ export function Sidebar() {
   })
   const [expanded, setExpanded] = createSignal<string[]>([])
   const [searchQuery, setSearchQuery] = createSignal('')
+  const [pickerAgent, setPickerAgent] = createSignal<{ toolId: string; displayName: string } | null>(null)
 
   let interval: ReturnType<typeof setInterval> | undefined
 
@@ -57,12 +60,42 @@ export function Sidebar() {
   }
 
   const handleSpawn = async (agent: AgentEntry) => {
-    const sessionId = addTerminalSession(agent.toolId, agent.displayName)
-    const result = await agentSpawn(agent.toolId, sessionId, agent.displayName)
+    const allSettings = await settingsGetAll()
+    const askKey = `agent:${agent.toolId}:askWorkingDir`
+    const lastDirKey = `agent:${agent.toolId}:lastWorkingDir`
+    const askWorkingDir = allSettings[askKey] === 'true'
+    const lastDir = allSettings[lastDirKey] || ''
+
+    if (askWorkingDir) {
+      // 弹出目录选择器
+      setPickerAgent({ toolId: agent.toolId, displayName: agent.displayName })
+      return
+    }
+
+    // 直接启动
+    doSpawn(agent.toolId, agent.displayName, lastDir)
+  }
+
+  const doSpawn = async (toolId: string, displayName: string, cwd: string) => {
+    const sessionId = addTerminalSession(toolId, displayName)
+    const result = await agentSpawn(toolId, sessionId, displayName, cwd || undefined)
     if (!result.ok) {
       removeTerminalSession(sessionId)
       console.error('agent:spawn failed', result.error)
     }
+  }
+
+  const handlePickerConfirm = async (path: string, _addToGlobal: boolean) => {
+    const agent = pickerAgent()
+    if (!agent) return
+    // 记住上次选择
+    await settingsSet(`agent:${agent.toolId}:lastWorkingDir`, path)
+    setPickerAgent(null)
+    doSpawn(agent.toolId, agent.displayName, path)
+  }
+
+  const handlePickerCancel = () => {
+    setPickerAgent(null)
   }
 
   const filtered = () =>
@@ -278,6 +311,17 @@ export function Sidebar() {
           </Show>
         </div>
       </div>
+
+      {/* 工作目录选择弹窗 — Portal 到 body 避免 backdrop-filter 包含块陷阱 */}
+      <Show when={pickerAgent()}>
+        <Portal mount={document.body}>
+          <WorkingDirPicker
+            lastDir=""
+            onConfirm={handlePickerConfirm}
+            onCancel={handlePickerCancel}
+          />
+        </Portal>
+      </Show>
     </div>
   )
 }
