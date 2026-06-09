@@ -6,30 +6,21 @@ import { GenericAdapter } from '../adapters/generic'
 import { logger } from '../logger'
 import { validateToolId } from '../utils/validation'
 
-/** 用 spawn 传数组执行，绕过 cmd.exe 的管道解析，UTF-8 编码 */
-function runCommand(command: string, args: string[], timeout: number): Promise<string> {
+/** 安装/卸载命令：打开可见终端窗口执行，用户自主交互 */
+function runInstallCommand(command: string, args: string[], _timeout: number): Promise<string> {
   return new Promise((resolve, reject) => {
-    const proc = spawn(command, args, {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      windowsHide: true,
+    // Windows: 打开新的 PowerShell 窗口
+    const finalArgs = process.platform === 'win32'
+      ? ['/c', 'start', '"Install"', command, ...args]
+      : [command, ...args]
+    const proc = spawn(process.platform === 'win32' ? 'cmd.exe' : command, finalArgs, {
+      stdio: 'ignore',
+      detached: true,
     })
-    let stdout = ''
-    let stderr = ''
-    proc.stdout?.on('data', (chunk: Buffer) => { stdout += chunk.toString('utf-8') })
-    proc.stderr?.on('data', (chunk: Buffer) => { stderr += chunk.toString('utf-8') })
-    const timer = setTimeout(() => {
-      proc.kill()
-      reject(new Error(`命令超时 (${timeout / 1000}s)`))
-    }, timeout)
-    proc.on('close', (code) => {
-      clearTimeout(timer)
-      if (code === 0) resolve(stdout)
-      else reject(new Error(stderr || stdout || `退出码 ${code}`))
-    })
-    proc.on('error', (err) => {
-      clearTimeout(timer)
-      reject(err)
-    })
+    proc.unref()
+    // 不等待——用户在新窗口中自主操作
+    resolve('')
+    proc.on('error', reject)
   })
 }
 
@@ -83,9 +74,9 @@ export function registerAgentIpc(): void {
     try {
       const cmd = adapter.getInstallCommand()!
       logger.info('main', `agent:install ${toolId}`, { command: cmd.command, args: cmd.args })
-      // 使用 spawn 传数组，绕过 cmd.exe 管道解析
-      await runCommand(cmd.command, cmd.args, 300000)
-      return { ok: true, data: { installed: adapter.detect() } }
+      // 在新窗口中执行，用户自主完成安装
+      await runInstallCommand(cmd.command, cmd.args, 300000)
+      return { ok: true, data: { installed: false, launched: true } }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
       logger.error('main', `agent:install ${toolId} 失败`, { error: msg })
@@ -104,8 +95,8 @@ export function registerAgentIpc(): void {
     try {
       const cmd = adapter.getUninstallCommand()!
       logger.info('main', `agent:uninstall ${toolId}`, { command: cmd.command, args: cmd.args })
-      await runCommand(cmd.command, cmd.args, 120000)
-      return { ok: true, data: { installed: adapter.detect() } }
+      await runInstallCommand(cmd.command, cmd.args, 120000)
+      return { ok: true, data: { installed: true, launched: true } }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
       logger.error('main', `agent:uninstall ${toolId} 失败`, { error: msg })

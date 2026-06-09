@@ -24,7 +24,9 @@ export function AgentConfigPage() {
   const handleInstall = async (toolId: string) => {
     setInstalling(toolId)
     const result = await agentInstall(toolId)
-    if (!result.ok) {
+    if (result.ok) {
+      alert('安装窗口已打开，请在新窗口中完成安装后刷新页面验证。')
+    } else {
       alert(`安装失败: ${result.error?.message || '未知错误'}`)
     }
     const list = await configList()
@@ -35,7 +37,9 @@ export function AgentConfigPage() {
   const handleUninstall = async (toolId: string) => {
     setInstalling(toolId)
     const result = await agentUninstall(toolId)
-    if (!result.ok) {
+    if (result.ok) {
+      alert('卸载窗口已打开，请在新窗口中完成操作后刷新页面验证。')
+    } else {
       alert(`卸载失败: ${result.error?.message || '未知错误'}`)
     }
     const list = await configList()
