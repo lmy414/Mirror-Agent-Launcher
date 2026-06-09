@@ -43,7 +43,8 @@ export class KimiCodeAdapter implements ConfigAdapter {
 
   detect(): boolean {
     try {
-      execSync('kimi --version', { stdio: 'pipe', timeout: 5000 })
+      const cmd = process.platform === 'win32' ? 'kimi.cmd' : 'kimi'
+      execSync(`${cmd} --version`, { stdio: 'pipe', timeout: 5000 })
       return true
     } catch { return false }
   }
@@ -51,7 +52,7 @@ export class KimiCodeAdapter implements ConfigAdapter {
   getConfigSchema(): ConfigSection[] {
     return [{
       id: 'launch', label: '启动配置', fields: [
-        { key: 'command', label: '启动命令', type: 'string', defaultValue: 'kimi', required: true },
+        { key: 'command', label: '启动命令', type: 'string', defaultValue: process.platform === 'win32' ? 'kimi.cmd' : 'kimi', required: true },
         { key: 'cwd', label: '工作目录', type: 'path', defaultValue: '', required: false },
       ],
     }]
@@ -114,7 +115,7 @@ export class KimiCodeAdapter implements ConfigAdapter {
       Object.assign(env, p.buildEnv(config))
     }
     return {
-      command: (config.command as string) || 'kimi',
+      command: (config.command as string) || (process.platform === 'win32' ? 'kimi.cmd' : 'kimi'),
       args: [],
       cwd: (config.cwd as string) || process.cwd(),
       env,
