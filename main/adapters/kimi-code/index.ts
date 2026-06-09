@@ -14,6 +14,7 @@ const SAFE_ENV_KEYS = [
   'USERNAME', 'COMPUTERNAME', 'USERDOMAIN',
   'LANG', 'LC_ALL', 'LC_CTYPE',
   'SHELL', 'COLORTERM', 'TERM_PROGRAM', 'TERM_PROGRAM_VERSION',
+  'PATHEXT',
 ]
 
 export class KimiCodeAdapter implements ConfigAdapter {
