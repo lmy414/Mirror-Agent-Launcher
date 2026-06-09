@@ -17,7 +17,7 @@ export class KimiCodeAdapter implements ConfigAdapter {
   getInstallCommand(): { command: string; args: string[] } {
     return {
       command: 'powershell',
-      args: ['-Command', 'irm https://code.kimi.com/kimi-code/install.ps1 | iex'],
+      args: ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'irm https://code.kimi.com/kimi-code/install.ps1 | iex'],
     }
   }
 

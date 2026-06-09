@@ -23,7 +23,10 @@ export function AgentConfigPage() {
 
   const handleInstall = async (toolId: string) => {
     setInstalling(toolId)
-    await agentInstall(toolId)
+    const result = await agentInstall(toolId)
+    if (!result.ok) {
+      alert(`安装失败: ${result.error?.message || '未知错误'}`)
+    }
     const list = await configList()
     setAgents(list.map(a => ({ ...a, askWorkingDir: false })))
     setInstalling(null)
@@ -31,7 +34,10 @@ export function AgentConfigPage() {
 
   const handleUninstall = async (toolId: string) => {
     setInstalling(toolId)
-    await agentUninstall(toolId)
+    const result = await agentUninstall(toolId)
+    if (!result.ok) {
+      alert(`卸载失败: ${result.error?.message || '未知错误'}`)
+    }
     const list = await configList()
     setAgents(list.map(a => ({ ...a, askWorkingDir: false })))
     setInstalling(null)
