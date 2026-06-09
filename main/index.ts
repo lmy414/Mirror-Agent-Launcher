@@ -37,7 +37,8 @@ function createWindow() {
 
   if (saved.isMaximized) mainWindow.maximize()
 
-  logger.subscribe(mainWindow.webContents)
+  const wc = mainWindow.webContents
+  logger.subscribe(wc)
 
   if (isDev() && process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL)
@@ -64,14 +65,19 @@ function createWindow() {
   mainWindow.on('maximize', () => saveWindowState({ ...saved, isMaximized: true }))
   mainWindow.on('unmaximize', () => saveWindowState({ ...saved, isMaximized: false }))
   mainWindow.on('closed', () => {
-    if (mainWindow) {
-      logger.unsubscribe(mainWindow.webContents)
-    }
+    logger.unsubscribe(wc)
     mainWindow = null
   })
 }
 
 // ── 窗口 IPC ──
+function registerClipboardIpc() {
+  ipcMain.handle('clipboard:readText', () => {
+    const { clipboard } = require('electron')
+    return clipboard.readText()
+  })
+}
+
 function registerDialogIpc() {
   ipcMain.handle('dialog:openDirectory', async () => {
     const { dialog } = await import('electron')
@@ -108,6 +114,7 @@ app.whenReady().then(() => {
   // 通用适配器由前端通过 agent:add 动态创建
 
   registerWindowIpc()
+  registerClipboardIpc()
   registerDialogIpc()
   registerConfigIpc()
   registerTerminalIpc()

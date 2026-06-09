@@ -67,6 +67,11 @@ const electronAPI = {
     set: (key: string, value: string) => ipcRenderer.invoke('settings:set', { key, value }),
   },
 
+  // ── 剪贴板 ──
+  clipboard: {
+    readText: () => ipcRenderer.invoke('clipboard:readText'),
+  },
+
   // ── 文件对话框 ──
   dialog: {
     openDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),

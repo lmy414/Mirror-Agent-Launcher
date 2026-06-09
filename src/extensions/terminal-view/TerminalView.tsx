@@ -85,6 +85,25 @@ export function TerminalWindow(props: {
       terminalStdin(props.session.id, data)
     })
 
+    // ── 粘贴支持：捕获 Ctrl+V / Ctrl+Shift+V ──
+    term.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+        // 先尝试 Electron clipboard，再降级到 navigator
+        try {
+          if (window.electronAPI?.clipboard?.readText) {
+            const text = window.electronAPI.clipboard.readText()
+            if (text && term) { terminalStdin(props.session.id, text) }
+            return false
+          }
+        } catch { /* fall through */ }
+        navigator.clipboard.readText().then((text) => {
+          if (text && term) { terminalStdin(props.session.id, text) }
+        }).catch(() => {/* denied */})
+        return false
+      }
+      return true
+    })
+
     // ── 重放缓冲数据 + 建立直接管道 ──
     const writeToTerm = (data: string) => {
       if (term) term.write(data)
@@ -169,13 +188,15 @@ export function TerminalWindow(props: {
         </span>
       </div>
 
-      {/* xterm container */}
+      {/* xterm container — 必须覆盖全局 user-select: none */}
       <div
         ref={containerRef}
         style={{
           flex: '1',
           'min-height': '0',
           background: 'rgba(0,0,0,0.35)',
+          'user-select': 'text',
+          '-webkit-user-select': 'text',
         }}
       />
     </div>
