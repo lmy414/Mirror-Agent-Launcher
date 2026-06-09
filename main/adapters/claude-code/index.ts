@@ -86,16 +86,6 @@ export class ClaudeCodeAdapter implements ConfigAdapter {
           },
         ],
       },
-      {
-        id: 'hooks',
-        label: 'Hooks',
-        fields: [
-          {
-            key: 'hooks.enabled', label: '启用 Hooks', type: 'boolean',
-            defaultValue: true, required: false,
-          },
-        ],
-      },
     ]
   }
 
@@ -199,7 +189,6 @@ export class ClaudeCodeAdapter implements ConfigAdapter {
       model: 'claude-sonnet-4-6',
       theme: 'dark',
       autoCompact: true,
-      'hooks.enabled': true,
     }
   }
 }
