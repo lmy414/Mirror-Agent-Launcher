@@ -44,6 +44,48 @@ export function registerAgentIpc(): void {
     return { ok: true }
   })
 
+  ipcMain.handle('agent:install', async (_e, { toolId }: { toolId: string }) => {
+    if (!validateToolId(toolId)) {
+      return { ok: false, error: { code: 'INVALID_TOOL_ID', message: 'toolId 包含非法字符' } }
+    }
+    const adapter = adapterRegistry.get(toolId)
+    if (!adapter?.getInstallCommand) {
+      return { ok: false, error: { code: 'NO_INSTALL', message: `适配器 ${toolId} 不支持一键安装` } }
+    }
+    try {
+      const cmd = adapter.getInstallCommand()!
+      logger.info('main', `agent:install ${toolId}`, { command: cmd.command, args: cmd.args })
+      const { execSync } = await import('child_process')
+      execSync(`${cmd.command} ${cmd.args.join(' ')}`, { stdio: 'pipe', timeout: 300000 })
+      return { ok: true, data: { installed: adapter.detect() } }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      logger.error('main', `agent:install ${toolId} 失败`, { error: msg })
+      return { ok: false, error: { code: 'INSTALL_ERROR', message: msg } }
+    }
+  })
+
+  ipcMain.handle('agent:uninstall', async (_e, { toolId }: { toolId: string }) => {
+    if (!validateToolId(toolId)) {
+      return { ok: false, error: { code: 'INVALID_TOOL_ID', message: 'toolId 包含非法字符' } }
+    }
+    const adapter = adapterRegistry.get(toolId)
+    if (!adapter?.getUninstallCommand) {
+      return { ok: false, error: { code: 'NO_UNINSTALL', message: `适配器 ${toolId} 不支持一键卸载` } }
+    }
+    try {
+      const cmd = adapter.getUninstallCommand()!
+      logger.info('main', `agent:uninstall ${toolId}`, { command: cmd.command, args: cmd.args })
+      const { execSync } = await import('child_process')
+      execSync(`${cmd.command} ${cmd.args.join(' ')}`, { stdio: 'pipe', timeout: 120000 })
+      return { ok: true, data: { installed: adapter.detect() } }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      logger.error('main', `agent:uninstall ${toolId} 失败`, { error: msg })
+      return { ok: false, error: { code: 'UNINSTALL_ERROR', message: msg } }
+    }
+  })
+
   ipcMain.handle('agent:list', () => {
     return {
       ok: true,

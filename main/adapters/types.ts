@@ -69,4 +69,10 @@ export interface ConfigAdapter {
 
   /** 返回原生配置文件路径（可选，用于「查看原始配置」） */
   getConfigPath?(): string
+
+  /** 返回安装命令（可选，用于一键安装） */
+  getInstallCommand?(): { command: string; args: string[] } | null
+
+  /** 返回卸载命令（可选，用于一键卸载） */
+  getUninstallCommand?(): { command: string; args: string[] } | null
 }

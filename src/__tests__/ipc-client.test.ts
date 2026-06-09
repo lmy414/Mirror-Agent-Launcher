@@ -34,6 +34,8 @@ function mockAPI(): ElectronAPI {
       list: vi.fn().mockResolvedValue({ ok: true, data: { running: [] } }),
       add: vi.fn().mockResolvedValue({ ok: true }),
       remove: vi.fn().mockResolvedValue({ ok: true }),
+      install: vi.fn().mockResolvedValue({ ok: true, data: { installed: true } }),
+      uninstall: vi.fn().mockResolvedValue({ ok: true, data: { installed: false } }),
     },
     dialog: {
       openDirectory: vi.fn().mockResolvedValue('D:\\test-dir'),
@@ -55,6 +57,9 @@ function mockAPI(): ElectronAPI {
     settings: {
       getAll: vi.fn().mockResolvedValue({ ok: true, data: {} }),
       set: vi.fn().mockResolvedValue({ ok: true }),
+    },
+    clipboard: {
+      readText: vi.fn().mockResolvedValue('test clipboard'),
     },
   }
 }

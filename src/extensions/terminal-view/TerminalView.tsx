@@ -85,17 +85,9 @@ export function TerminalWindow(props: {
       terminalStdin(props.session.id, data)
     })
 
-    // ── 粘贴支持：捕获 Ctrl+V / Ctrl+Shift+V ──
+    // ── 粘贴支持：Ctrl+V / Ctrl+Shift+V → clipboard → PTY ──
     term.attachCustomKeyEventHandler((e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
-        // 先尝试 Electron clipboard，再降级到 navigator
-        try {
-          if (window.electronAPI?.clipboard?.readText) {
-            const text = window.electronAPI.clipboard.readText()
-            if (text && term) { terminalStdin(props.session.id, text) }
-            return false
-          }
-        } catch { /* fall through */ }
         navigator.clipboard.readText().then((text) => {
           if (text && term) { terminalStdin(props.session.id, text) }
         }).catch(() => {/* denied */})

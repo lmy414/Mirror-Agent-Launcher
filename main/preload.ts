@@ -27,6 +27,8 @@ const electronAPI = {
     list: () => ipcRenderer.invoke('agent:list'),
     add: (toolId: string, displayName: string) => ipcRenderer.invoke('agent:add', { toolId, displayName }),
     remove: (toolId: string) => ipcRenderer.invoke('agent:remove', { toolId }),
+    install: (toolId: string) => ipcRenderer.invoke('agent:install', { toolId }),
+    uninstall: (toolId: string) => ipcRenderer.invoke('agent:uninstall', { toolId }),
   },
 
   // ── 终端 I/O ──

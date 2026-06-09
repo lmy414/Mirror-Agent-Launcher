@@ -1,6 +1,6 @@
 import { createSignal, For, Show, onMount } from 'solid-js'
 import { Plus, FileText, Settings } from 'lucide-solid'
-import { configList, configRead, configWrite, agentAdd, settingsGetAll } from '@/bridge/ipc-client'
+import { configList, configWrite, agentAdd, agentInstall, agentUninstall, settingsGetAll } from '@/bridge/ipc-client'
 import { AgentDetailPanel } from './AgentDetailPanel'
 import './AgentConfigPage.css'
 
@@ -18,6 +18,25 @@ export function AgentConfigPage() {
   const [newName, setNewName] = createSignal('')
   const [newCmd, setNewCmd] = createSignal('')
   const [newDir, setNewDir] = createSignal('')
+  const [installing, setInstalling] = createSignal<string | null>(null)
+  const [uninstallTarget, setUninstallTarget] = createSignal<string | null>(null)
+
+  const handleInstall = async (toolId: string) => {
+    setInstalling(toolId)
+    await agentInstall(toolId)
+    const list = await configList()
+    setAgents(list.map(a => ({ ...a, askWorkingDir: false })))
+    setInstalling(null)
+  }
+
+  const handleUninstall = async (toolId: string) => {
+    setInstalling(toolId)
+    await agentUninstall(toolId)
+    const list = await configList()
+    setAgents(list.map(a => ({ ...a, askWorkingDir: false })))
+    setInstalling(null)
+    setUninstallTarget(null)
+  }
 
   onMount(async () => {
     const list = await configList()
@@ -110,7 +129,13 @@ export function AgentConfigPage() {
                     }}
                   />
                   <span class="agent-page__sidebar-item-name">{agent.displayName}</span>
-                  {!agent.installed && <span class="agent-page__sidebar-item-tag">未安装</span>}
+                  {installing() === agent.toolId && <span class="agent-page__sidebar-item-tag">处理中...</span>}
+                  {!agent.installed && installing() !== agent.toolId && (
+                    <span class="agent-page__sidebar-item-tag" style="cursor:pointer" onClick={(e) => { e.stopPropagation(); handleInstall(agent.toolId) }}>⬇ 安装</span>
+                  )}
+                  {agent.installed && (
+                    <span class="agent-page__sidebar-item-tag" style="cursor:pointer" onClick={(e) => { e.stopPropagation(); setUninstallTarget(agent.toolId) }} title="卸载">🗑</span>
+                  )}
                 </div>
               )}
             </For>
@@ -131,6 +156,17 @@ export function AgentConfigPage() {
             <div style={{ display: 'flex', gap: '8px', 'justify-content': 'flex-end' }}>
               <button class="agent-detail__view-config" onClick={() => setShowAdd(false)}>取消</button>
               <button class="agent-detail__save-btn" onClick={handleAddAgent}>添加</button>
+            </div>
+          </div>
+        </Show>
+
+        {/* 卸载二次确认 */}
+        <Show when={uninstallTarget()}>
+          <div style="padding:10px 12px;margin:0 8px;background:rgba(var(--error-rgb),0.1);border:1px solid rgba(var(--error-rgb),0.3);border-radius:6px;font-size:12px">
+            <div style="margin-bottom:6px">确认卸载 {uninstallTarget()}？</div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button onClick={() => setUninstallTarget(null)} style="padding:4px 12px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--text-muted);cursor:pointer;font-size:11px;font-family:inherit">取消</button>
+              <button onClick={() => handleUninstall(uninstallTarget()!)} style="padding:4px 12px;border-radius:4px;border:none;background:rgba(var(--error-rgb),0.3);color:var(--error);cursor:pointer;font-size:11px;font-family:inherit">确认卸载</button>
             </div>
           </div>
         </Show>

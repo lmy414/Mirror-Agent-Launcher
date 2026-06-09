@@ -7,6 +7,7 @@ import { registerSettingsIpc } from './ipc/settings'
 import { logger } from './logger'
 import { adapterRegistry } from './adapters/registry'
 import { ClaudeCodeAdapter } from './adapters/claude-code'
+import { KimiCodeAdapter } from './adapters/kimi-code'
 import { GenericAdapter } from './adapters/generic'
 import { loadWindowState, saveWindowState, type WindowState } from './store/app-state'
 
@@ -111,6 +112,7 @@ function registerWindowIpc() {
 app.whenReady().then(() => {
   // 注册内置适配器
   adapterRegistry.register(new ClaudeCodeAdapter())
+  adapterRegistry.register(new KimiCodeAdapter())
   // 通用适配器由前端通过 agent:add 动态创建
 
   registerWindowIpc()
