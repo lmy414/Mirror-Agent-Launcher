@@ -72,110 +72,99 @@
 
 ---
 
-## 二、中期计划（v0.2 — 功能体系建设）
+## 二、中期计划（v0.2 — MCP 集成 + Skills 管理 + 配置中心）
 
-> **目标**：补齐可视化配置、API Key 管理、多适配器三大核心功能模块。  
-> **策略**：每个里程碑独立可测，互不阻塞。
+> **目标**：从终端管理器升级为 Agent 编排平台。  
+> **策略**：MCP Server、Skills 管理、可视化配置中心三线并行。
 
-### 2.1 v0.2 可视化配置中心
-
-对应 README roadmap v0.2，将当前的 [AgentConfigPage.tsx](src/views/settings/AgentConfigPage.tsx) 从简单表单升级为完整的配置管理中心。
+### 2.1 MCP 协议集成 — 让 Agent 能调用 Agent
 
 | # | 功能 | 说明 |
 |---|------|------|
-| C01 | **动态表单引擎** | 基于 `ConfigAdapter.getConfigSchema()` 返回的 `ConfigSection[]` 自动渲染表单，替代当前 AgentConfigPage 的手写 input |
-| C02 | **配置模板市场** | 内置 Cursor CLI、Codex、Gemini CLI、Qwen CLI 的配置模板，一键导入为 GenericAdapter |
-| C03 | **实时配置校验** | 表单字段失焦即校验，错误信息精确到字段级（利用 `validate()` 返回值） |
-| C04 | **配置 Diff 预览** | 保存前展示变更摘要（增/删/改），防止误改 |
-| C05 | **JSON 原文编辑** | 高级模式：直接编辑原生 JSON 文件，带语法高亮和格式校验 |
-| C06 | **配置导出/导入** | 导出单个 Agent 配置为 JSON 文件，支持跨机器迁移 |
-| C07 | **配置重置** | 一键恢复适配器默认配置 |
+| M01 | **MCP Server 核心** | Launcher 内建 MCP Server（stdio transport），暴露 Agent 管理能力为 MCP tools |
+| M02 | **tools/list + tools/call** | 实现 JSON-RPC 协议，注册 `list_agents`、`spawn_agent`、`send_prompt`、`read_output`、`stop_agent` |
+| M03 | **Agent 注册发现** | Claude Code 等 MCP Client 启动时自动连接 Launcher MCP Server |
+| M04 | **子 Agent 隔离** | spawn 的子 Agent 不继承 MCP 能力（`MCP_DISABLED` 环境变量），防止递归调用 |
+| M05 | **深度限制 + 超时强杀** | `depth` 计数器最大 1 层；子 Agent PTY 最长运行 5 分钟自动 kill |
+| M06 | **MCP Server 管理面板** | 设置页可视化配置外部 MCP Server（command + args + env），显示运行状态 |
+| M07 | **工具/资源浏览器** | 实时列出每个 MCP Server 暴露的 tools、resources 及 JSON Schema |
+| M08 | **连接状态 + 日志** | 每个 Server 运行状态（🟢/🔴/🟡）、重连次数、按 server 过滤日志 |
+| M09 | **工具调用测试** | UI 中填参数直接调用 MCP tool 并查看返回（类 Postman） |
+| M10 | **外部 MCP Server 注册** | 支持用户手动添加外部 MCP Server，管理其生命周期 |
 
-### 2.2 v0.3 API Key & 模型管理
-
-对应 README roadmap v0.3。
-
-| # | 功能 | 说明 |
-|---|------|------|
-| K01 | **系统 KeyChain 集成** | 使用 Electron `safeStorage` 加密 API Key，存入系统凭证管理器（Windows Credential Manager） |
-| K02 | **Provider 管理** | 统一管理 Anthropic / OpenAI / Google / Azure / 自定义 endpoint |
-| K03 | **模型列表自动发现** | 通过各 Provider API 拉取可用模型列表，缓存到本地 |
-| K04 | **一键注入环境变量** | 选择模型/Provider → 自动设置 `ANTHROPIC_API_KEY`、`OPENAI_API_KEY` 等环境变量到 PTY 启动参数 |
-| K05 | **Token 用量仪表盘** | 完善 [RuntimeTracker](main/runtime/tracker.ts)，聚合 token 消耗 → 按工具/日期/模型出柱状图 |
-| K06 | **用量告警** | 设置 Token 上限 → 接近阈值时桌面通知 |
-| K07 | **成本估算** | 根据模型定价表计算大致费用（$），展示在 Dashboard |
-
-### 2.3 多适配器扩展
+### 2.2 Skills 技能管理
 
 | # | 功能 | 说明 |
 |---|------|------|
-| A01 | **Cursor CLI 适配器** | `main/adapters/cursor.ts` — 适配 Cursor 的 CLI 配置 |
-| A02 | **Gemini CLI 适配器** | `main/adapters/gemini.ts` — 适配 Google Gemini CLI |
-| A03 | **Codex (OpenAI) 适配器** | `main/adapters/codex.ts` — 适配 OpenAI Codex CLI |
-| A04 | **适配器自动发现增强** | 扫描 PATH 中已知的 CLI 工具名，自动提示「检测到 XXX，是否添加？」 |
-| A05 | **适配器版本管理** | 检测 CLI 工具版本（`--version`），与最低要求版本比对 |
+| S01 | **技能浏览器** | 树形展示项目级（`.agents/skills/`）和全局级（`~/.agents/skills/`）技能 |
+| S02 | **元数据解析** | 解析技能 frontmatter（name/description/version），卡片式展示 |
+| S03 | **一键安装** | 拖入 `.zip` 技能包自动解压到正确目录 |
+| S04 | **启用/禁用** | 单个技能开关（重命名/移出目录） |
+| S05 | **内嵌编辑器** | Monaco Editor 在线编辑 Skill 的 markdown 内容 |
+| S06 | **技能市场** | 连接社区索引仓库，浏览/搜索/一键下载 |
 
-### 2.4 进程管理增强
+### 2.3 可视化配置中心
+
+| # | 功能 | 说明 |
+|---|------|------|
+| C01 | **配置模板市场** | 内置 Cursor CLI、Codex、Gemini CLI、Qwen CLI 的配置模板，一键导入 |
+| C02 | **JSON 原文编辑** | 内嵌 Monaco Editor，直接编辑原生 JSON/YAML 文件，带语法高亮 |
+| C03 | **配置 Diff 预览** | 保存前展示变更摘要（增/删/改），防止误改 |
+| C04 | **配置导出/导入** | 导出单个 Agent 配置为 JSON，跨机器迁移 |
+| C05 | **配置重置** | 一键恢复适配器默认配置 |
+
+### 2.4 多适配器扩展
+
+| # | 功能 | 说明 |
+|---|------|------|
+| A01 | **Cursor CLI 适配器** | `main/adapters/cursor/` — 适配 Cursor CLI |
+| A02 | **Gemini CLI 适配器** | `main/adapters/gemini/` — 适配 Google Gemini CLI |
+| A03 | **Codex (OpenAI) 适配器** | `main/adapters/codex/` — 适配 OpenAI Codex CLI |
+| A04 | **适配器自动发现** | 扫描 PATH 中已知 CLI 工具名，自动提示添加 |
+
+### 2.5 进程管理增强
 
 | # | 功能 | 说明 |
 |---|------|------|
 | P01 | **会话持久化** | 关闭应用时保存运行中的终端列表，下次启动选择性恢复 |
-| P02 | **崩溃自动重启** | PTY 进程异常退出后，3 秒内自动重连（保留终端窗口和输出历史） |
-| P03 | **资源监控** | 终端标题栏显示 CPU/内存占用（通过 pid 查询） |
-| P04 | **终止确认** | `Ctrl+C` 两次快速按 = 强制 kill，单次 = 发送 SIGINT |
-| P05 | **多实例检测** | 检测到已有实例运行 → 激活已有窗口而非启动新实例 |
+| P02 | **崩溃自动重启** | PTY 进程异常退出后 3 秒内自动重连 |
+| P03 | **多实例检测** | 已有实例运行 → 激活已有窗口而非启动新实例 |
 
 ---
 
-## 三、长期计划（v0.4 — v1.0 生态与分发）
+## 三、长期计划（v0.3 — v1.0 API Key 管理 + 生态 + 跨平台）
 
 > **目标**：成为 CLI Agent 领域的通用 IDE 级启动器。  
-> **策略**：技能管理 → MCP 集成 → 社区生态 → 跨平台。
+> **策略**：API Key 管理 → 插件生态 → 社区市场 → 跨平台分发。
 
-### 3.1 v0.4 Skills 技能管理
-
-对应 README roadmap v0.4。
+### 3.1 v0.3 API Key & 用量管理
 
 | # | 功能 | 说明 |
 |---|------|------|
-| S01 | **技能浏览器** | 树形展示项目级（`.claude/skills/`）和全局级（`~/.claude/skills/`）技能 |
-| S02 | **技能元数据解析** | 解析技能包中的 frontmatter（name / description / version），卡片式展示 |
-| S03 | **一键安装** | 拖入 `.zip` 技能包 → 自动解压到正确目录 |
-| S04 | **启用/禁用** | 单个技能开关，通过重命名/移出目录实现 |
-| S05 | **技能编辑器** | 内嵌 Monaco Editor，在线编辑技能的 markdown 内容 |
-| S06 | **技能市场** | 连接社区索引仓库，浏览/搜索/一键下载技能 |
+| K01 | **系统 KeyChain 集成** | Electron `safeStorage` 加密 API Key，存入系统凭证管理器 |
+| K02 | **多 Provider 管理** | 统一管理 Anthropic / OpenAI / Google / Azure / 自定义 endpoint |
+| K03 | **模型列表自动发现** | 通过 Provider API 拉取可用模型列表 |
+| K04 | **Token 用量仪表盘** | 聚合 token 消耗 → 按工具/日期/模型可视化 |
+| K05 | **用量告警** | 设置 Token 上限 → 接近阈值桌面通知 |
+| K06 | **成本估算** | 根据模型定价表计算费用展示 |
 
-### 3.2 v0.5 MCP 协议集成
-
-对应 README roadmap v0.5。
+### 3.2 窗口与布局
 
 | # | 功能 | 说明 |
 |---|------|------|
-| M01 | **MCP Server 管理** | 表单式添加/编辑 MCP Server（command + args + env + autoStart） |
-| M02 | **连接状态面板** | 每个 MCP Server 显示运行状态（🟢在线 / 🔴离线 / 🟡连接中）、重连次数、最近错误 |
-| M03 | **工具/资源浏览器** | 实时列出每个 MCP Server 暴露的 tools、resources、prompts 及其 JSON Schema |
-| M04 | **工具调用测试** | 在 UI 中填写参数 → 调用 MCP tool → 查看返回结果（类似 Postman） |
-| M05 | **MCP Server 日志** | 聚合 MCP Server 的 stdout/stderr，按 server 维度过滤 |
-| M06 | **MCP Inspector 集成** | 一键启动 MCP Inspector 调试工具 |
-
-### 3.3 窗口与布局
-
-| # | 功能 | 说明 |
-|---|------|------|
-| W01 | **自定义布局保存** | 用户拖拽调整终端窗口大小/位置 → 保存为命名布局（「编码模式」「调试模式」等） |
+| W01 | **自定义布局保存** | 用户拖拽调整终端窗口大小/位置 → 保存为命名布局 |
 | W02 | **多显示器支持** | 拖拽终端窗口到第二个显示器，独立全屏 |
 | W03 | **画中画模式** | 终端缩略为小窗悬浮在其他应用之上 |
-| W04 | **透明/毛玻璃强度调节** | 滑块控制 backdrop-filter blur 和玻璃透明度 |
 
-### 3.4 插件与扩展
+### 3.3 插件与扩展
 
 | # | 功能 | 说明 |
 |---|------|------|
 | X01 | **Extension SDK** | 开放第三方扩展 API，文档化 `ExtensionRegistry` 接口 |
 | X02 | **扩展市场** | 社区提交、审核、安装扩展的完整流程 |
-| X03 | **内置扩展** | Live2D 看板娘（已有模型资产）、系统监控面板、快捷笔记 |
+| X03 | **内置扩展** | 系统监控面板、快捷笔记、Markdown 渲染 |
 
-### 3.5 跨平台与分发
+### 3.4 跨平台与分发
 
 | # | 功能 | 说明 |
 |---|------|------|
@@ -185,7 +174,7 @@
 | D04 | **便携版** | 免安装 ZIP 包，适合 U 盘携带 |
 | D05 | **企业部署** | MSI 安装包 + GPO 管理模板 + 静默安装 |
 
-### 3.6 质量工程
+### 3.5 质量工程
 
 | # | 功能 | 说明 |
 |---|------|------|
@@ -202,11 +191,11 @@
 
 ```
 近期（v0.1.x）  ████████████  🔲 Bug 修复 + 测试 + 规范整治 + 体验优化
-中期（v0.2）    ░░░░░░░░░░░░  🔲 可视化配置中心
-中期（v0.3）    ░░░░░░░░░░░░  🔲 API Key + 模型管理 + 多适配器
-长期（v0.4）    ░░░░░░░░░░░░  🔲 Skills 技能管理
-长期（v0.5）    ░░░░░░░░░░░░  🔲 MCP 协议集成
-长期（v1.0）    ░░░░░░░░░░░░  🔲 跨平台 + 插件生态 + 自动更新
+中期（v0.2.0）  ░░░░░░░░░░░░  🔲 MCP 协议集成 + Skills 管理 + 配置中心 + 多适配器
+中期（v0.2.1+） ░░░░░░░░░░░░  🔲 进程管理增强 + 会话持久化
+长期（v0.3.0）  ░░░░░░░░░░░░  🔲 API Key 管理 + Token 用量 + 成本估算
+长期（v0.4.0）  ░░░░░░░░░░░░  🔲 插件生态 + 社区市场
+长期（v1.0.0）  ░░░░░░░░░░░░  🔲 跨平台 + 自动更新 + 全功能稳定版
 ```
 
 ---
