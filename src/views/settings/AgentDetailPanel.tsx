@@ -1,4 +1,4 @@
-import { createSignal, Show, For, onMount, createMemo } from 'solid-js'
+import { createSignal, Show, For, onMount, createMemo, createEffect } from 'solid-js'
 import { FileText, Wrench, Globe, Cpu } from 'lucide-solid'
 import { configRead, configWrite, configProviders } from '@/bridge/ipc-client'
 import './AgentConfigPage.css'
@@ -84,7 +84,11 @@ export function AgentDetailPanel(props: Props) {
     providers().find((p) => p.id === provider())
   )
 
-  onMount(async () => {
+  // 切换工具时重新加载（SolidJS Show 复用组件，onMount 不重复触发）
+  createEffect(() => {
+    const tid = props.toolId
+    // eslint-disable-next-line solid/reactivity
+    ;(async () => {
     // 加载配置
     const cfgResult = await configRead(props.toolId)
     if (cfgResult.ok && cfgResult.data) {
@@ -120,7 +124,7 @@ export function AgentDetailPanel(props: Props) {
       }
       setFormValues((prev) => ({ ...vals, ...prev }))
     }
-
+    })()
   })
 
   const handleFieldChange = (key: string, value: unknown) => {
