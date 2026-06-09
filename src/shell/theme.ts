@@ -118,5 +118,5 @@ export function applyWallpaper(path: string | null): void {
 /** 从 settings entries 中恢复壁纸 */
 export function restoreWallpaper(settingsEntries: { key: string; value: string }[]): void {
   const entry = settingsEntries.find(e => e.key === 'wallpaper')
-  applyWallpaper(entry?.value ?? '/wallpapers/default-bg.jpg')
+  if (entry?.value) applyWallpaper(entry.value)
 }

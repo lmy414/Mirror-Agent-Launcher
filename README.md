@@ -261,10 +261,7 @@ mirror-agent-launcher/
 │
 ├── public/                      # 静态资源
 │   ├── icon.png                 # 应用图标源文件
-│   ├── icon.ico                 # Windows 图标（生成产物）
-│   ├── live2d/                  # Live2D 看板娘模型
-│   ├── vendor/                  # 第三方库（Live2D SDK）
-│   └── wallpapers/              # 默认壁纸
+│   └── icon.ico                 # Windows 图标（生成产物）
 │
 └── docs/                        # 文档
     ├── superpowers/             # 设计文档

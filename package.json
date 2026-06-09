@@ -52,12 +52,7 @@
       "dist-electron/**/*",
       "dist/assets/**/*"
     ],
-    "extraResources": [
-      {
-        "from": "public/live2d",
-        "to": "live2d"
-      }
-    ],
+    "extraResources": [],
     "npmRebuild": false,
     "asarUnpack": [
       "node_modules/node-pty/**/*.node"

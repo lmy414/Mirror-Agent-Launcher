@@ -28,7 +28,7 @@ export function DisplayPage() {
   const titleStyle: Record<string, string> = { 'font-family': '"Noto Serif SC", serif', 'font-size': '15px', 'font-weight': '600', color: 'var(--text-primary)' }
   const cardStyle: Record<string, string> = { background: '#0E0E1640', border: '1px solid rgba(255,255,255,0.024)', 'border-radius': '6px' }
 
-  const currentWallpaper = createMemo(() => get('wallpaper') ?? '/wallpapers/default-bg.jpg')
+  const currentWallpaper = createMemo(() => get('wallpaper') ?? '')
 
   const handleWallpaperBrowse = () => {
     const input = document.createElement('input')
@@ -49,9 +49,8 @@ export function DisplayPage() {
   }
 
   const handleWallpaperReset = () => {
-    const defaultPath = '/wallpapers/default-bg.jpg'
-    applyWallpaper(defaultPath)
-    set('wallpaper', defaultPath)
+    applyWallpaper(null)
+    set('wallpaper', '')
   }
 
   return (
@@ -187,7 +186,7 @@ export function DisplayPage() {
           <div onClick={handleWallpaperBrowse} {...kbd(handleWallpaperBrowse)} style={{ display: 'flex', 'align-items': 'center', padding: '7px 16px', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', 'border-radius': '4px', cursor: 'pointer' }}>
             <span style={{ 'font-size': '11px', 'font-weight': '500', color: 'var(--text-secondary)' }}>浏览</span>
           </div>
-          <Show when={currentWallpaper() !== '/wallpapers/default-bg.jpg'}>
+          <Show when={!!currentWallpaper()}>
             <div onClick={handleWallpaperReset} {...kbd(handleWallpaperReset)} style={{ display: 'flex', 'align-items': 'center', padding: '7px 16px', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', 'border-radius': '4px', cursor: 'pointer' }}>
               <span style={{ 'font-size': '11px', 'font-weight': '500', color: 'var(--text-muted)' }}>重置</span>
             </div>

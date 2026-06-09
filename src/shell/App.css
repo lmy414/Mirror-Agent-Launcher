@@ -97,9 +97,8 @@ body {
   -webkit-app-region: drag;
 }
 
-/* ====== 底图（硬编码，后续通过设置面板切换） ====== */
+/* ====== 底图（可在设置 → 显示设置中自定义）====== */
 body {
-  background-image: url('/wallpapers/default-bg.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
