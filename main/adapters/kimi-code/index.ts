@@ -7,8 +7,13 @@ import type { ConfigAdapter, ConfigSection, ProviderConfig } from '../types'
 import { kimiNative, openAI, anthropic, deepseek } from './providers'
 
 const SAFE_ENV_KEYS = [
-  'PATH', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'TEMP', 'TMP',
-  'SYSTEMROOT', 'SystemRoot', 'USERNAME', 'COMPUTERNAME',
+  'PATH', 'HOME', 'USERPROFILE', 'HOMEDRIVE', 'HOMEPATH',
+  'APPDATA', 'LOCALAPPDATA', 'TEMP', 'TMP',
+  'SYSTEMROOT', 'SystemRoot', 'SYSTEMDRIVE',
+  'ProgramFiles', 'ProgramFiles(x86)', 'CommonProgramFiles',
+  'USERNAME', 'COMPUTERNAME', 'USERDOMAIN',
+  'LANG', 'LC_ALL', 'LC_CTYPE',
+  'SHELL', 'COLORTERM', 'TERM_PROGRAM', 'TERM_PROGRAM_VERSION',
 ]
 
 export class KimiCodeAdapter implements ConfigAdapter {
