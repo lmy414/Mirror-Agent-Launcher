@@ -9,7 +9,10 @@ import { validateToolId } from '../utils/validation'
 /** 后台等待完成的 spawn，UTF-8 解码，超时强杀 */
 function runCommand(command: string, args: string[], timeout: number): Promise<string> {
   return new Promise((resolve, reject) => {
-    const proc = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] })
+    const proc = spawn(command, args, {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      shell: process.platform === 'win32',
+    })
     let stdout = '', stderr = ''
     proc.stdout?.on('data', (c: Buffer) => { stdout += c.toString('utf-8') })
     proc.stderr?.on('data', (c: Buffer) => { stderr += c.toString('utf-8') })

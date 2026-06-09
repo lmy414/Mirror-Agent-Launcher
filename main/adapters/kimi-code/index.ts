@@ -16,14 +16,14 @@ export class KimiCodeAdapter implements ConfigAdapter {
 
   getInstallCommand(): { command: string; args: string[] } {
     return {
-      command: 'npm',
+      command: process.platform === 'win32' ? 'npm.cmd' : 'npm',
       args: ['install', '-g', '@moonshot-ai/kimi-code'],
     }
   }
 
   getUninstallCommand(): { command: string; args: string[] } {
     return {
-      command: 'npm',
+      command: process.platform === 'win32' ? 'npm.cmd' : 'npm',
       args: ['uninstall', '-g', '@moonshot-ai/kimi-code'],
     }
   }
