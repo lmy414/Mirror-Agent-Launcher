@@ -16,15 +16,15 @@ export class KimiCodeAdapter implements ConfigAdapter {
 
   getInstallCommand(): { command: string; args: string[] } {
     return {
-      command: 'powershell',
-      args: ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'irm https://code.kimi.com/kimi-code/install.ps1 | iex'],
+      command: 'npm',
+      args: ['install', '-g', '@moonshot-ai/kimi-code'],
     }
   }
 
   getUninstallCommand(): { command: string; args: string[] } {
     return {
       command: 'npm',
-      args: ['uninstall', '-g', '@anthropic-ai/kimi-code'],
+      args: ['uninstall', '-g', '@moonshot-ai/kimi-code'],
     }
   }
 

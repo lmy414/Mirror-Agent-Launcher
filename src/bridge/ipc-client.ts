@@ -65,12 +65,12 @@ export async function agentRemove(toolId: string): Promise<{ ok: boolean; error?
   return window.electronAPI.agent.remove(toolId)
 }
 
-export async function agentInstall(toolId: string): Promise<{ ok: boolean; data?: { installed: boolean }; error?: { code: string; message: string } }> {
+export async function agentInstall(toolId: string): Promise<{ ok: boolean; data?: { installed: boolean; launched?: boolean }; error?: { code: string; message: string } }> {
   if (!isElectron) return { ok: false, error: { code: 'NO_ELECTRON', message: '非 Electron 环境' } }
   return window.electronAPI.agent.install(toolId)
 }
 
-export async function agentUninstall(toolId: string): Promise<{ ok: boolean; data?: { installed: boolean }; error?: { code: string; message: string } }> {
+export async function agentUninstall(toolId: string): Promise<{ ok: boolean; data?: { installed: boolean; launched?: boolean }; error?: { code: string; message: string } }> {
   if (!isElectron) return { ok: false, error: { code: 'NO_ELECTRON', message: '非 Electron 环境' } }
   return window.electronAPI.agent.uninstall(toolId)
 }

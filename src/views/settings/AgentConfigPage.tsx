@@ -25,7 +25,11 @@ export function AgentConfigPage() {
     setInstalling(toolId)
     const result = await agentInstall(toolId)
     if (result.ok) {
-      alert('安装窗口已打开，请在新窗口中完成安装后刷新页面验证。')
+      if (result.data?.installed) {
+        alert('安装成功！')
+      } else if (result.data?.launched) {
+        alert('安装窗口已打开，请在新窗口中完成安装后刷新页面。')
+      }
     } else {
       alert(`安装失败: ${result.error?.message || '未知错误'}`)
     }
@@ -38,7 +42,11 @@ export function AgentConfigPage() {
     setInstalling(toolId)
     const result = await agentUninstall(toolId)
     if (result.ok) {
-      alert('卸载窗口已打开，请在新窗口中完成操作后刷新页面验证。')
+      if (!result.data?.installed) {
+        alert('卸载成功！')
+      } else if (result.data?.launched) {
+        alert('卸载窗口已打开，请在新窗口中完成操作后刷新页面。')
+      }
     } else {
       alert(`卸载失败: ${result.error?.message || '未知错误'}`)
     }

@@ -6,6 +6,22 @@ import { GenericAdapter } from '../adapters/generic'
 import { logger } from '../logger'
 import { validateToolId } from '../utils/validation'
 
+/** 后台等待完成的 spawn，UTF-8 解码，超时强杀 */
+function runCommand(command: string, args: string[], timeout: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] })
+    let stdout = '', stderr = ''
+    proc.stdout?.on('data', (c: Buffer) => { stdout += c.toString('utf-8') })
+    proc.stderr?.on('data', (c: Buffer) => { stderr += c.toString('utf-8') })
+    const timer = setTimeout(() => { proc.kill(); reject(new Error(`超时 ${timeout / 1000}s`)) }, timeout)
+    proc.on('close', (code) => {
+      clearTimeout(timer)
+      code === 0 ? resolve(stdout) : reject(new Error(stderr || stdout || `退出码 ${code}`))
+    })
+    proc.on('error', (err) => { clearTimeout(timer); reject(err) })
+  })
+}
+
 /** 安装/卸载命令：打开可见终端窗口执行，用户自主交互 */
 function runInstallCommand(command: string, args: string[], _timeout: number): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -74,9 +90,14 @@ export function registerAgentIpc(): void {
     try {
       const cmd = adapter.getInstallCommand()!
       logger.info('main', `agent:install ${toolId}`, { command: cmd.command, args: cmd.args })
-      // 在新窗口中执行，用户自主完成安装
-      await runInstallCommand(cmd.command, cmd.args, 300000)
-      return { ok: true, data: { installed: false, launched: true } }
+      // npm 等无交互命令 → 后台等待完成；powershell 等需要交互 → 弹窗
+      const isInteractive = cmd.command === 'powershell'
+      if (isInteractive) {
+        await runInstallCommand(cmd.command, cmd.args, 300000)
+        return { ok: true, data: { installed: false, launched: true } }
+      }
+      await runCommand(cmd.command, cmd.args, 300000)
+      return { ok: true, data: { installed: adapter.detect() } }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
       logger.error('main', `agent:install ${toolId} 失败`, { error: msg })
@@ -95,8 +116,13 @@ export function registerAgentIpc(): void {
     try {
       const cmd = adapter.getUninstallCommand()!
       logger.info('main', `agent:uninstall ${toolId}`, { command: cmd.command, args: cmd.args })
-      await runInstallCommand(cmd.command, cmd.args, 120000)
-      return { ok: true, data: { installed: true, launched: true } }
+      const isInteractive = cmd.command === 'powershell'
+      if (isInteractive) {
+        await runInstallCommand(cmd.command, cmd.args, 120000)
+        return { ok: true, data: { installed: true, launched: true } }
+      }
+      await runCommand(cmd.command, cmd.args, 120000)
+      return { ok: true, data: { installed: adapter.detect() } }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
       logger.error('main', `agent:uninstall ${toolId} 失败`, { error: msg })
