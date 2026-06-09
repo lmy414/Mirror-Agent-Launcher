@@ -2,6 +2,7 @@ import os from 'os'
 import path from 'path'
 import fs from 'fs'
 import { execSync } from 'child_process'
+import { app } from 'electron'
 import type { ConfigAdapter, ConfigSection, ProviderConfig } from '../types'
 import { kimiNative, openAI, anthropic, deepseek } from './providers'
 
@@ -15,8 +16,16 @@ export class KimiCodeAdapter implements ConfigAdapter {
   displayName = 'Kimi Code'
   private providers = [kimiNative, openAI, anthropic, deepseek]
 
+  /** 原生配置文件路径（用于「查看原始配置」） */
   configPath(): string {
     return path.join(os.homedir(), '.kimi', 'config.toml')
+  }
+
+  /** Launcher 自有 store（不污染原生 config.toml） */
+  private storePath(): string {
+    const dir = path.join(app.getPath('userData'), 'adapters')
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+    return path.join(dir, `${this.toolId}.json`)
   }
 
   getProviders(): ProviderConfig[] {
@@ -58,41 +67,19 @@ export class KimiCodeAdapter implements ConfigAdapter {
     }]
   }
 
+  /** 从 Launcher 自有 store 读取（不碰 ~/.kimi/config.toml） */
   read(): Record<string, unknown> {
-    const fp = this.configPath()
+    const fp = this.storePath()
     if (!fs.existsSync(fp)) return {}
-    try {
-      const raw = fs.readFileSync(fp, 'utf-8')
-      const result: Record<string, unknown> = {}
-      for (const line of raw.split('\n')) {
-        const t = line.trim()
-        if (!t || t.startsWith('#') || t.startsWith('[')) continue
-        const i = t.indexOf('=')
-        if (i === -1) continue
-        const k = t.slice(0, i).trim()
-        let v = t.slice(i + 1).trim()
-        if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1)
-        result[k] = v
-      }
-      return result
-    } catch { return {} }
+    try { return JSON.parse(fs.readFileSync(fp, 'utf-8')) }
+    catch { return {} }
   }
 
+  /** 写入 Launcher 自有 store（不碰 ~/.kimi/config.toml） */
   write(partial: Record<string, unknown>): void {
-    const fp = this.configPath()
-    const dir = path.dirname(fp)
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-    let current: Record<string, unknown> = {}
-    if (fs.existsSync(fp)) {
-      try { current = this.read() } catch { /* keep empty */ }
-    }
+    const current = this.read()
     Object.assign(current, partial)
-    const lines: string[] = []
-    for (const [k, v] of Object.entries(current)) {
-      if (v === null || v === undefined || v === '') continue
-      lines.push(typeof v === 'string' ? `${k} = "${v}"` : `${k} = ${v}`)
-    }
-    fs.writeFileSync(fp, lines.join('\n') + '\n', 'utf-8')
+    fs.writeFileSync(this.storePath(), JSON.stringify(current, null, 2), 'utf-8')
   }
 
   validate(config: Record<string, unknown>): { valid: boolean; errors: string[] } {
