@@ -43,6 +43,35 @@ export interface LogEntry {
 
 const [sidebarLogs, setSidebarLogs] = createSignal<LogEntry[]>([])
 
+// ── 终端会话管理（全局，供 PencilMainView + Sidebar + TerminalView 共享）──
+export interface TerminalSessionInfo {
+  id: string
+  title: string
+  toolId: string
+  running: boolean
+  exitCode?: number
+}
+
+const [terminalSessions, setTerminalSessions] = createSignal<TerminalSessionInfo[]>([])
+
+export function getTerminalSessions() {
+  return terminalSessions
+}
+
+export function addTerminalSession(toolId: string, title: string): string {
+  const id = `term-${toolId}-${Date.now()}`
+  setTerminalSessions((prev) => [...prev, { id, title, toolId, running: true }])
+  return id
+}
+
+export function removeTerminalSession(id: string) {
+  setTerminalSessions((prev) => prev.filter((s) => s.id !== id))
+}
+
+export function setTerminalRunning(id: string, running: boolean) {
+  setTerminalSessions((prev) => prev.map((s) => (s.id === id ? { ...s, running } : s)))
+}
+
 // ── 导出 ──
 export function useAppState() {
   return {

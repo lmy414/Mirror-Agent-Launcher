@@ -4,6 +4,7 @@ import { Terminal } from '@xterm/xterm'
 import '@xterm/xterm/css/xterm.css'
 import { terminalStdin, terminalResize, onTerminalStdout, onTerminalExit } from '@/bridge/ipc-client'
 import { accentHex } from '@/shell/theme'
+import { setTerminalRunning, type TerminalSessionInfo } from '@/shell/app-state'
 
 // ── 终端主题（继承玻璃拟态色系）──
 function createTerminalTheme(): object {
@@ -17,35 +18,6 @@ function createTerminalTheme(): object {
     fontFamily: '"JetBrains Mono", "Cascadia Code", "Fira Code", monospace',
     allowTransparency: true,
   }
-}
-
-// ── 全局终端会话 store ──
-export interface TerminalSessionInfo {
-  id: string
-  title: string
-  toolId: string
-  running: boolean
-  exitCode?: number
-}
-
-const [sessions, setSessions] = createSignal<TerminalSessionInfo[]>([])
-
-export function getTerminalSessions() {
-  return sessions
-}
-
-export function addTerminalSession(toolId: string, title: string): string {
-  const id = `term-${toolId}-${Date.now()}`
-  setSessions((prev) => [...prev, { id, title, toolId, running: true }])
-  return id
-}
-
-export function removeTerminalSession(id: string) {
-  setSessions((prev) => prev.filter((s) => s.id !== id))
-}
-
-export function setTerminalRunning(id: string, running: boolean) {
-  setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, running } : s)))
 }
 
 // ── stdout 全局缓冲（解决竞态：PTY 先产数据，组件后挂载）──

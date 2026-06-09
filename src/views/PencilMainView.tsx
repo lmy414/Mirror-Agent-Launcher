@@ -1,12 +1,8 @@
 import { For, Show, createMemo } from 'solid-js'
 import { Terminal as TerminalIcon } from 'lucide-solid'
 import { registry } from '@/registry'
-import {
-  getTerminalSessions,
-  removeTerminalSession,
-  TerminalWindow,
-  type TerminalSessionInfo,
-} from '@/extensions/terminal-view/TerminalView'
+import { getTerminalSessions, removeTerminalSession, type TerminalSessionInfo } from '@/shell/app-state'
+import { TerminalWindow } from '@/extensions/terminal-view/TerminalView'
 import { agentStop } from '@/bridge/ipc-client'
 
 export default function PencilMainView() {

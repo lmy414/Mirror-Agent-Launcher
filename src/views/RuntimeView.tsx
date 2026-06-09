@@ -1,20 +1,7 @@
 import { createSignal, For, Show, onMount, onCleanup } from 'solid-js'
 import { Clock, Activity, Zap } from 'lucide-solid'
 import { onRuntimeUpdate, type RuntimeRecord } from '@/bridge/ipc-client'
-
-/** 格式化毫秒为 mm:ss */
-function formatDuration(ms: number): string {
-  const s = Math.floor(ms / 1000)
-  const m = Math.floor(s / 60)
-  const sec = s % 60
-  return `${m}:${String(sec).padStart(2, '0')}`
-}
-
-/** 格式化 tokens */
-function formatTokens(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
-  return String(n)
-}
+import { formatDuration, formatTokens } from '@/shell/format'
 
 export default function RuntimeView() {
   const [records, setRecords] = createSignal<RuntimeRecord[]>([])

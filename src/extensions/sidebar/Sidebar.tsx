@@ -1,25 +1,15 @@
 import { createSignal, createMemo, For, Show, onMount, onCleanup } from 'solid-js'
 import { Portal } from 'solid-js/web'
 import { Terminal, Plus, Search, Clock, Zap } from 'lucide-solid'
-import { addTerminalSession, removeTerminalSession } from '@/extensions/terminal-view/TerminalView'
+import { addTerminalSession, removeTerminalSession } from '@/shell/app-state'
 import { configList, agentSpawn, settingsGetAll, settingsSet, onRuntimeUpdate, type RuntimeRecord } from '@/bridge/ipc-client'
 import { WorkingDirPicker } from '@/components/working-dir-picker'
+import { formatDuration, formatTokens } from '@/shell/format'
 
 interface AgentEntry {
   toolId: string
   displayName: string
   installed: boolean
-}
-
-function formatDuration(ms: number): string {
-  const s = Math.floor(ms / 1000)
-  const m = Math.floor(s / 60)
-  return `${m}:${String(s % 60).padStart(2, '0')}`
-}
-
-function formatTokens(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
-  return String(n)
 }
 
 export function Sidebar() {
