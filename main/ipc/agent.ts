@@ -1,9 +1,37 @@
 import { ipcMain } from 'electron'
+import { spawn } from 'child_process'
 import { ptyManager } from '../pty/manager'
 import { adapterRegistry } from '../adapters/registry'
 import { GenericAdapter } from '../adapters/generic'
 import { logger } from '../logger'
 import { validateToolId } from '../utils/validation'
+
+/** 用 spawn 传数组执行，绕过 cmd.exe 的管道解析，UTF-8 编码 */
+function runCommand(command: string, args: string[], timeout: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(command, args, {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      windowsHide: true,
+    })
+    let stdout = ''
+    let stderr = ''
+    proc.stdout?.on('data', (chunk: Buffer) => { stdout += chunk.toString('utf-8') })
+    proc.stderr?.on('data', (chunk: Buffer) => { stderr += chunk.toString('utf-8') })
+    const timer = setTimeout(() => {
+      proc.kill()
+      reject(new Error(`命令超时 (${timeout / 1000}s)`))
+    }, timeout)
+    proc.on('close', (code) => {
+      clearTimeout(timer)
+      if (code === 0) resolve(stdout)
+      else reject(new Error(stderr || stdout || `退出码 ${code}`))
+    })
+    proc.on('error', (err) => {
+      clearTimeout(timer)
+      reject(err)
+    })
+  })
+}
 
 export function registerAgentIpc(): void {
   ipcMain.handle('agent:spawn', (event, { toolId, sessionId, displayName, cwd: customCwd }: { toolId: string; sessionId?: string; displayName?: string; cwd?: string }) => {
@@ -55,8 +83,8 @@ export function registerAgentIpc(): void {
     try {
       const cmd = adapter.getInstallCommand()!
       logger.info('main', `agent:install ${toolId}`, { command: cmd.command, args: cmd.args })
-      const { execSync } = await import('child_process')
-      execSync(`${cmd.command} ${cmd.args.join(' ')}`, { stdio: 'pipe', timeout: 300000 })
+      // 使用 spawn 传数组，绕过 cmd.exe 管道解析
+      await runCommand(cmd.command, cmd.args, 300000)
       return { ok: true, data: { installed: adapter.detect() } }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -76,8 +104,7 @@ export function registerAgentIpc(): void {
     try {
       const cmd = adapter.getUninstallCommand()!
       logger.info('main', `agent:uninstall ${toolId}`, { command: cmd.command, args: cmd.args })
-      const { execSync } = await import('child_process')
-      execSync(`${cmd.command} ${cmd.args.join(' ')}`, { stdio: 'pipe', timeout: 120000 })
+      await runCommand(cmd.command, cmd.args, 120000)
       return { ok: true, data: { installed: adapter.detect() } }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
